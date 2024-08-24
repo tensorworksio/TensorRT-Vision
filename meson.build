@@ -1,12 +1,13 @@
-project('engine.trt', 'cpp')
-
-# Include directory
-inc_dir = include_directories('include')
+project('engine.trt', 'cpp',
+        version : '0.1',
+        default_options : ['warning_level=3', 'cpp_std=c++17'])
 
 # Dependencies
-cuda_dep = dependency('cuda', required : true)
-spdlog_dep = dependency('spdlog', required : true)
-boost_dep = dependency('boost', modules: ['filesystem', 'program_options', 'json'])
+cuda_dep = dependency('cuda')
+spdlog_dep = dependency('spdlog')
+boost_dep = dependency('boost', 
+  modules: ['filesystem', 'program_options', 'json']
+)
 opencv_dep = dependency('opencv4',
   modules: ['core', 'highgui', 'imgproc', 'imgcodecs', 'video', 'videoio']
 )
@@ -20,14 +21,29 @@ tensorrt_dep = declare_dependency(
 )
 
 # Source files
-src_files = files(
+engine_src = files(
   'src/engine.cpp',
 )
 
+# Include 
+engine_inc = [include_directories('include'),  tensorrt_include_dir]
+
 # Build shared library
-library(
+engine_lib = shared_library(
   'engine', 
-  src_files,
-  dependencies: [boost_dep, opencv_dep, spdlog_dep, cuda_dep, tensorrt_dep],
-  include_directories: [inc_dir, tensorrt_include_dir]
+  sources : engine_src,
+  include_directories : engine_inc,
+  dependencies : [boost_dep, opencv_dep, spdlog_dep, cuda_dep, tensorrt_dep],
+  install : true
 )
+
+# Declare dependencies
+engine_dep = declare_dependency(
+  link_with : engine_lib,
+  include_directories : engine_inc,
+  dependencies : [boost_dep, opencv_dep, spdlog_dep, cuda_dep, tensorrt_dep]
+)
+
+# Make engine_dep available to parent projects
+meson.override_dependency('engine', engine_dep)
+
