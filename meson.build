@@ -47,3 +47,7 @@ engine_dep = declare_dependency(
 # Make engine_dep available to parent projects
 meson.override_dependency('engine', engine_dep)
 
+# Build examples (optional)
+if get_option('build_examples')
+  subdir('examples')
+endif

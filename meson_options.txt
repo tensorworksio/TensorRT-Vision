@@ -1,0 +1,2 @@
+option('build_examples', type : 'boolean', value : false, description : 'Build example programs')
+
