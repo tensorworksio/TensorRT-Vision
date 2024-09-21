@@ -7,6 +7,7 @@
 #include <string>
 #include <NvInfer.h>
 #include "engine/logger.hpp"
+#include <nlohmann/json.hpp>
 #include <opencv2/opencv.hpp>
 
 namespace trt
@@ -19,14 +20,42 @@ namespace trt
         FP32 = 32
     };
 
-    const std::string toString(Precision precision);
-
     struct EngineOptions
     {
         Precision precision = Precision::FP16;
         int32_t optBatchSize = 1;
         int32_t maxBatchSize = 1;
         int deviceIndex = 0;
+    };
+
+    struct EngineConfig
+    {
+        std::string engineModelPath{};
+        int batchSize = 1;
+        Precision precision = Precision::FP16;
+
+        virtual ~EngineConfig() = default;
+        virtual std::shared_ptr<const EngineConfig> clone() const = 0;
+
+    protected:
+        // Protected constructor to prevent direct instantiation of EngineConfig
+        EngineConfig() = default;
+
+        void loadEngineConfig(const nlohmann::json &data)
+        {
+            if (data.contains("engineModelPath"))
+            {
+                engineModelPath = data["engineModelPath"].get<std::string>();
+            }
+            if (data.contains("batchSize"))
+            {
+                batchSize = data["batchSize"].get<int>();
+            }
+            if (data.contains("precision"))
+            {
+                precision = static_cast<Precision>(data["precision"].get<int>());
+            }
+        }
     };
 
     class Engine
@@ -69,6 +98,7 @@ namespace trt
         NvLogger m_logger;
     };
 
+    bool loadEngine(Engine &engine, const std::string &engineModelPath);
     void setEngineOptions(EngineOptions &options, int batchSize, Precision precision);
 
 } // namespace trt

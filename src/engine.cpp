@@ -8,20 +8,6 @@ namespace fs = boost::filesystem;
 namespace trt
 {
 
-    const std::string toString(Precision precision)
-    {
-        switch (precision)
-        {
-        case Precision::INT8:
-            return "INT8";
-        case Precision::FP16:
-            return "FP16";
-        case Precision::FP32:
-        default:
-            return "FP32";
-        }
-    }
-
     Engine::Engine(const EngineOptions &options, NvLogger logger) : m_options(options), m_logger(logger) {}
 
     Engine::~Engine()
@@ -328,6 +314,17 @@ namespace trt
             outputs.emplace_back(std::move(batchOutputs));
         }
         return true;
+    }
+
+    bool loadEngine(Engine &engine, const std::string &engineModelPath)
+    {
+        bool success;
+        success = engine.loadNetwork(engineModelPath);
+        if (!success)
+        {
+            throw std::runtime_error("Unable to load TRT engine");
+        }
+        return success;
     }
 
     void setEngineOptions(EngineOptions &options, int batchSize, Precision precision)

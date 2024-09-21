@@ -5,6 +5,7 @@ project('engine.trt', 'cpp',
 # Dependencies
 cuda_dep = dependency('cuda')
 spdlog_dep = dependency('spdlog')
+json_dep = dependency('nlohmann_json')
 boost_dep = dependency('boost', 
   modules: ['filesystem', 'program_options', 'json']
 )
@@ -23,6 +24,7 @@ tensorrt_dep = declare_dependency(
 # Source files
 engine_src = files(
   'src/engine.cpp',
+  'src/processor.cpp'
 )
 
 # Include 
@@ -33,7 +35,7 @@ engine_lib = shared_library(
   'engine', 
   sources : engine_src,
   include_directories : engine_inc,
-  dependencies : [boost_dep, opencv_dep, spdlog_dep, cuda_dep, tensorrt_dep],
+  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep],
   install : true
 )
 
@@ -41,7 +43,7 @@ engine_lib = shared_library(
 engine_dep = declare_dependency(
   link_with : engine_lib,
   include_directories : engine_inc,
-  dependencies : [boost_dep, opencv_dep, spdlog_dep, cuda_dep, tensorrt_dep]
+  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep]
 )
 
 # Make engine_dep available to parent projects

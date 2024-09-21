@@ -45,8 +45,8 @@ int main(int argc, char *argv[])
 
     po::options_description desc("Allowed options");
     desc.add_options()("help", "produce help message")
-        ("image", po::value<std::string>(&imagePath)->required(), "path to the image file")
-        ("model", po::value<std::string>(&engineModelPath)->required(), "path to the model file");
+                      ("image", po::value<std::string>(&imagePath)->required(), "path to the image file")
+                      ("model", po::value<std::string>(&engineModelPath)->required(), "path to the model file");
 
     po::variables_map vm;
     try
