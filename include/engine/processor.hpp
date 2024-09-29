@@ -1,6 +1,6 @@
 #pragma once
 #include "engine/engine.hpp"
-#include "common/detection.hpp"
+#include "common/detection_utils.hpp"
 
 namespace trt
 {

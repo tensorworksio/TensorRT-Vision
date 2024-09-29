@@ -3,8 +3,7 @@
 #include <boost/program_options.hpp>
 
 #include <engine/engine.hpp>
-#include <common/letterbox.hpp>
-#include <common/detection.hpp>
+#include <common/detection_utils.hpp>
 
 namespace po = boost::program_options;
 

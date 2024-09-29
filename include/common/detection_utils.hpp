@@ -1,6 +1,15 @@
 #pragma once
 
+#include <iostream>
 #include <opencv2/opencv.hpp>
+
+struct Detection
+{
+    int class_id;
+    float probability;
+    cv::Rect2f bbox;
+    std::string class_name;
+};
 
 inline cv::Mat letterbox(const cv::Mat &input, cv::Size new_shape, cv::Scalar color, bool auto_size, bool scale_fill, bool scaleup, int stride)
 {
@@ -50,4 +59,30 @@ inline cv::Mat letterbox(const cv::Mat &input, cv::Size new_shape, cv::Scalar co
     cv::copyMakeBorder(out, out, top, bottom, left, right, cv::BORDER_CONSTANT, color); // add border
 
     return out;
+}
+
+inline std::vector<float> softmax(const std::vector<float> &logits)
+{
+    std::vector<float> exp_values(logits.size());
+    std::vector<float> probabilities(logits.size());
+
+    // Find max logit value for numerical stability
+    auto max_logit = std::max_element(logits.begin(), logits.end());
+
+    // Calculate exponentials and their sum
+    float sum_exp = 0.f;
+    for (size_t i = 0; i < logits.size(); ++i)
+    {
+        // Substract max_logit for numerical stability
+        exp_values[i] = std::exp(logits[i] - *max_logit);
+        sum_exp += exp_values[i];
+    }
+
+    // Calculate softmax probabilities
+    for (size_t i = 0; i < logits.size(); ++i)
+    {
+        probabilities[i] = exp_values[i] / sum_exp;
+    }
+
+    return probabilities;
 }
