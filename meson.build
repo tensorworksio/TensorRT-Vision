@@ -24,7 +24,8 @@ tensorrt_dep = declare_dependency(
 # Source files
 engine_src = files(
   'src/engine.cpp',
-  'src/processor.cpp'
+  'src/processor.cpp',
+  'src/classifier.cpp'
 )
 
 # Include 

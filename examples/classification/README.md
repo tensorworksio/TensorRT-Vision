@@ -7,10 +7,10 @@ meson compile -C build
 ```
 
 ## Configure
-Configure your Engine settings in `config.json`
+Configure your model settings in `config.json`
 
 
 ## Run
 ```bash
-./build/examples/classification
+./build/examples/classification -c examples/classification/config.json -i examples/classification/data/image.jpg
 ```

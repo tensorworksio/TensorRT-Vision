@@ -1,5 +1,7 @@
 #pragma once
 
+#include <fstream>
+#include <nlohmann/json.hpp>
 #include "engine/processor.hpp"
 
 namespace trt
