@@ -1,5 +1,17 @@
-# TensorRT engine
-TensorRT runtime inference engine inspired by [tensorrt-cpp-api](https://github.com/cyrusbehr/tensorrt-cpp-api/tree/main)
+<div align="center">
+
+TensorRT-Vision
+===========================
+<h4> A TensorRT Toolbox for Optimized Vision Model Inference</h4>
+
+[![python](https://img.shields.io/badge/python-3.12.3-green)](https://www.python.org/downloads/release/python-3123/)
+[![cuda](https://img.shields.io/badge/cuda-12.6-green)](https://developer.nvidia.com/cuda-downloads)
+[![trt](https://img.shields.io/badge/TRT-10.5.0-green)](https://developer.nvidia.com/tensorrt)
+---
+<div align="left">
+
+## Requirements
+Install CUDA and TensorRT by following the instructions [here](https://gist.github.com/denguir/b21aa66ae7fb1089655dd9de8351a202)
 
 ## Export your model
 ```bash
@@ -17,7 +29,10 @@ meson compile -C build
 Configure your Engine settings in `config.json`
 
 
-## Example
+## Examples
 ```bash
-./example/classification
+- [x] Object classification
+- [x] Object re-identification
+- [ ] Object detection
+- [ ] YOLO
 ```
