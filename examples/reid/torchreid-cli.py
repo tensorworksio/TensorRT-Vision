@@ -10,7 +10,6 @@ def parse_arguments():
     parser.add_argument("-e", "--export", action="store_true", help="Export the specified model to ONNX")
     parser.add_argument("-o", "--output", type=str, default=None, help="Output path for ONNX model")
     parser.add_argument("-s", "--size", type=int, nargs=2, default=[256, 128], help="Input size (width height)")
-
     return parser
 
 
@@ -34,22 +33,22 @@ def main(parser):
 
 def export(model, onnx_path, size=(1, 3, 256, 128)):
     model.eval()
-
     # Dummy input
     dummy = torch.randn(size)
-
     # Export
     torch.onnx.export(model,
                       dummy,
                       onnx_path,
-                      export_params=False,
+                      export_params=True,
                       opset_version=12,
+                      do_constant_folding=True,
                       input_names=['image'],
-                      output_names=['feature']
+                      output_names=['feature'],
+                      dynamic_axes={'image': {0: 'batch_size'},
+                                    'feature': {0: 'batch_size'}},
                       )
 
 
 if __name__ == "__main__":
     parser = parse_arguments()
     main(parser)
-
