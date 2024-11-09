@@ -6,12 +6,11 @@ namespace trt
     ModelProcessor::ModelProcessor(const EngineConfig &config)
     {
         // Engine options
-        NvLogger logger;
         EngineOptions options;
         setEngineOptions(options, config.batchSize, config.precision);
 
         // Load engine
-        engine = std::make_unique<Engine>(options, logger);
+        engine = std::make_unique<Engine>(options);
         loadEngine(*engine, config.modelPath);
     }
 

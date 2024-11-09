@@ -9,7 +9,7 @@ namespace fs = boost::filesystem;
 namespace trt
 {
 
-    Engine::Engine(const EngineOptions &options, NvLogger logger) : m_options(options), m_logger(logger) {}
+    Engine::Engine(const EngineOptions &options) : m_options(options) {}
 
     Engine::~Engine()
     {

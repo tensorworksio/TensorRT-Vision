@@ -48,11 +48,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    trt::NvLogger logger;
     trt::EngineOptions options;
     options.maxBatchSize = 16;
 
-    trt::Engine engine = trt::Engine(options, logger);
+    trt::Engine engine = trt::Engine(options);
 
     bool success;
     success = engine.loadNetwork(engineModelPath);

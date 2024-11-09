@@ -49,7 +49,7 @@ namespace trt
     class Engine
     {
     public:
-        Engine(const EngineOptions &options, NvLogger logger);
+        Engine(const EngineOptions &options);
         ~Engine();
         // Clear memory
         void clearBuffers();
@@ -82,8 +82,8 @@ namespace trt
         std::unique_ptr<nvinfer1::ICudaEngine> m_engine = nullptr;
         std::unique_ptr<nvinfer1::IExecutionContext> m_context = nullptr;
 
+        NvLogger m_logger{};
         const EngineOptions m_options;
-        NvLogger m_logger;
     };
 
     bool loadEngine(Engine &engine, const std::string &engineModelPath);

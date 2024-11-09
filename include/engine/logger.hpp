@@ -10,10 +10,12 @@ namespace trt
     class NvLogger : public nvinfer1::ILogger
     {
     public:
-        NvLogger(Severity log_level = Severity::kWARNING) : NvLogger(spdlog::stdout_color_mt("NvLogger"), log_level) {}
+        static std::shared_ptr<spdlog::logger> getLogger() {
+            static std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("NvLogger");
+            return logger;
+        }
 
-        NvLogger(std::shared_ptr<spdlog::logger> logger, Severity log_level = Severity::kWARNING)
-            : level(log_level), m_logger(std::move(logger))
+        explicit NvLogger(Severity log_level = Severity::kWARNING) : level(log_level), m_logger(getLogger())
         {
             spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
         }
