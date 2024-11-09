@@ -11,8 +11,6 @@ namespace trt
     public:
         ModelProcessor(const EngineConfig &config);
         virtual ~ModelProcessor() = default;
-        const EngineConfig &getCongig() const { return *m_config; }
-
         // inference
         bool process(const cv::Mat &image, std::vector<Detection> &detections);
 
@@ -28,8 +26,7 @@ namespace trt
         virtual bool postprocess(std::vector<float> &featureVector, std::vector<Detection> &detections) = 0;
 
     protected:
-        std::shared_ptr<const EngineConfig> m_config;
-        std::unique_ptr<Engine> m_trtEngine{nullptr};
+        std::unique_ptr<Engine> engine = nullptr;
     };
 
 } // namespace trt

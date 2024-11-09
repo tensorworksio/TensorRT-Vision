@@ -5,7 +5,6 @@ namespace trt
 
     const std::string Classifier::getClassName(int class_id) const
     {
-        auto config = getClassifierConfig();
         if (config.classNames.empty())
         {
             return std::to_string(class_id);
@@ -23,7 +22,6 @@ namespace trt
         }
 
         Detection det{};
-        auto config = getClassifierConfig();
         auto maxElement = std::max_element(detections.begin(), detections.end(), [](const Detection &a, const Detection &b)
                                            { return a.probability < b.probability; });
         if (maxElement->probability >= config.confidenceThreshold)
@@ -50,25 +48,12 @@ namespace trt
 
     bool Classifier::postprocess(std::vector<float> &featureVector, std::vector<Detection> &detections)
     {
-        Detection det;
-        std::vector<float> probabilities;
-
-        auto config = getClassifierConfig();
-        if (config.activation == "softmax")
+        detections.resize(featureVector.size());
+        for (size_t i = 0; i < featureVector.size(); ++i)
         {
-            probabilities = softmax(featureVector);
-        }
-        else
-        {
-            probabilities = featureVector;
-        }
-
-        for (size_t i = 0; i < probabilities.size(); ++i)
-        {
-            det.class_id = static_cast<int>(i);
-            det.probability = probabilities[i];
-            det.class_name = getClassName(det.class_id);
-            detections.push_back(det);
+            detections[i].class_id = static_cast<int>(i);
+            detections[i].probability = featureVector[i];
+            detections[i].class_name = getClassName(detections[i].class_id);
         }
 
         return !detections.empty();

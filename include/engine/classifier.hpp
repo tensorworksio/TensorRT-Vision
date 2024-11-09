@@ -1,63 +1,52 @@
 #pragma once
 
 #include <fstream>
-#include <nlohmann/json.hpp>
+#include "common/json_utils.hpp"
 #include "engine/processor.hpp"
 
 namespace trt
 {
 
-    struct ClassifierConfig : EngineConfig
+    struct ClassifierConfig : JsonConfig
     {
-        std::string activation{};
+        EngineConfig engine;
         float confidenceThreshold{0.9f};
         std::vector<std::string> classNames{};
 
-        static ClassifierConfig loadFromJson(const std::string &filename)
-        {
+        void loadFromJson(const nlohmann::json &data) override {
+            if (data.contains("engine"))
+                engine.loadFromJson(data["engine"]);
+            if (data.contains("confidence_threshold"))
+                confidenceThreshold = data["confidence_threshold"].get<float>();
+            if (data.contains("class_names"))
+                classNames = data["class_names"].get<std::vector<std::string>>();
+        }
+
+        static ClassifierConfig load(const std::string &filename) {
             std::ifstream file(filename);
             auto data = nlohmann::json::parse(file);
-
             ClassifierConfig config;
-            config.loadEngineConfig(data);
-
-            if (data.contains("activation"))
-            {
-                config.activation = data["activation"].get<std::string>();
-            }
-            if (data.contains("confidenceThreshold"))
-            {
-                config.confidenceThreshold = data["confidenceThreshold"].get<float>();
-            }
-            if (data.contains("classNames"))
-            {
-                config.classNames = data["classNames"].get<std::vector<std::string>>();
-            }
-
+            config.loadFromJson(data);
             return config;
         }
 
-        std::shared_ptr<const EngineConfig> clone() const override { return std::make_shared<ClassifierConfig>(*this); }
+        std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<ClassifierConfig>(*this); }
     };
 
     class Classifier : public ModelProcessor
     {
     public:
-        Classifier(const ClassifierConfig &config) : ModelProcessor(config)
-        {
-            // Ensure the passed config is of the correct type
-            if (dynamic_cast<const ClassifierConfig *>(m_config.get()) == nullptr)
-            {
-                throw std::invalid_argument("Invalid config type: expected ClassifierConfig");
-            }
-        }
+        Classifier(const ClassifierConfig& t_config) : ModelProcessor(t_config.engine), config(t_config){}
         Detection process(const cv::Mat &image);
         const std::string getClassName(int class_id) const;
-        const ClassifierConfig &getClassifierConfig() const { return static_cast<const ClassifierConfig &>(*m_config); };
+        const ClassifierConfig& getConfig() const { return config; };
 
     protected:
         bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
         bool postprocess(std::vector<float> &featureVector, std::vector<Detection> &detections) override;
+
+    private:
+        const ClassifierConfig config;
     };
 
 } // namespace trt

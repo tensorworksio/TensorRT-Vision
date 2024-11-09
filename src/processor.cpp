@@ -3,7 +3,7 @@
 namespace trt
 {
 
-    ModelProcessor::ModelProcessor(const EngineConfig &config) : m_config(config.clone())
+    ModelProcessor::ModelProcessor(const EngineConfig &config)
     {
         // Engine options
         NvLogger logger;
@@ -11,8 +11,8 @@ namespace trt
         setEngineOptions(options, config.batchSize, config.precision);
 
         // Load engine
-        m_trtEngine = std::make_unique<Engine>(options, logger);
-        loadEngine(*m_trtEngine, config.engineModelPath);
+        engine = std::make_unique<Engine>(options, logger);
+        loadEngine(*engine, config.modelPath);
     }
 
     bool ModelProcessor::process(const cv::Mat &image, std::vector<Detection> &detections)
@@ -26,7 +26,7 @@ namespace trt
         {
             std::runtime_error("Model preprocessing failed");
         }
-        success = m_trtEngine->runInference(processedImage, featureVector);
+        success = engine->runInference(processedImage, featureVector);
         if (!success)
         {
             std::runtime_error("Model inference failed");
@@ -42,7 +42,7 @@ namespace trt
     bool ModelProcessor::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg)
     {
         // Single batch SISO preprocessing (SBSISO)
-        const auto &inputDims = m_trtEngine->getInputDims();
+        const auto &inputDims = engine->getInputDims();
         assert(inputDims.size() == 1);
 
         cv::Size size(inputDims[0].d[1], inputDims[0].d[2]);
@@ -62,7 +62,7 @@ namespace trt
     bool ModelProcessor::preprocess(std::vector<cv::Mat> &inputBatch)
     {
         // Multi batch SISO preprocessing (MBSISO)
-        const auto &inputDims = m_trtEngine->getInputDims();
+        const auto &inputDims = engine->getInputDims();
         assert(inputDims.size() == 1);
 
         cv::Size size(inputDims[0].d[1], inputDims[0].d[2]);
@@ -73,7 +73,7 @@ namespace trt
     {
         // MIMO preprocessing
         bool success = true;
-        const auto &inputDims = m_trtEngine->getInputDims();
+        const auto &inputDims = engine->getInputDims();
         for (size_t i = 0; i < inputDims.size(); ++i)
         {
             cv::Size size(inputDims[i].d[1], inputDims[i].d[2]);

@@ -7,7 +7,7 @@
 #include <string>
 #include <NvInfer.h>
 #include "engine/logger.hpp"
-#include <nlohmann/json.hpp>
+#include "common/json_utils.hpp"
 #include <opencv2/opencv.hpp>
 
 namespace trt
@@ -28,33 +28,21 @@ namespace trt
         int deviceIndex = 0;
     };
 
-    struct EngineConfig
+    struct EngineConfig : public JsonConfig
     {
-        std::string engineModelPath{};
+        std::string modelPath{};
         int batchSize = 1;
         Precision precision = Precision::FP16;
 
-        virtual ~EngineConfig() = default;
-        virtual std::shared_ptr<const EngineConfig> clone() const = 0;
+        std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<EngineConfig>(*this); }
 
-    protected:
-        // Protected constructor to prevent direct instantiation of EngineConfig
-        EngineConfig() = default;
-
-        void loadEngineConfig(const nlohmann::json &data)
-        {
-            if (data.contains("engineModelPath"))
-            {
-                engineModelPath = data["engineModelPath"].get<std::string>();
-            }
-            if (data.contains("batchSize"))
-            {
-                batchSize = data["batchSize"].get<int>();
-            }
+        void loadFromJson(const nlohmann::json &data) override {
+            if (data.contains("model_path"))
+                modelPath = data["model_path"].get<std::string>();
+            if (data.contains("batch_size"))
+                batchSize = data["batch_size"].get<int>();
             if (data.contains("precision"))
-            {
                 precision = static_cast<Precision>(data["precision"].get<int>());
-            }
         }
     };
 

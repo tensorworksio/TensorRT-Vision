@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     if (vm.count("config"))
     {
         std::string configPath = vm["config"].as<std::string>();
-        config = trt::ClassifierConfig::loadFromJson(configPath);
+        config = trt::ClassifierConfig::load(configPath);
     }
 
     // Load model
