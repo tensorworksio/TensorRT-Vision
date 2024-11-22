@@ -1,1 +1,1 @@
-option('build_apps', type: 'array', choices: ['yolo', 'reid', 'classifier'], value: ['reid'], description: 'List of apps to build')
+option('build_apps', type: 'array', choices: ['yolo', 'reid', 'classifier'], value: ['yolo'], description: 'List of apps to build')

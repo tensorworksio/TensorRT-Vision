@@ -21,7 +21,7 @@ trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16
 
 ## Compile
 ```bash
-meson setup build
+meson setup build -Dbuild_apps=yolo,reid,classifier
 meson compile -C build
 ```
 
