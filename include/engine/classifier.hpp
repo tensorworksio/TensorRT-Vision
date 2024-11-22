@@ -1,7 +1,7 @@
 #pragma once
 
 #include <fstream>
-#include "common/json_utils.hpp"
+#include "utils/json_utils.hpp"
 #include "engine/processor.hpp"
 
 namespace trt
@@ -13,7 +13,8 @@ namespace trt
         float confidenceThreshold{0.9f};
         std::vector<std::string> classNames{};
 
-        void loadFromJson(const nlohmann::json &data) override {
+        void loadFromJson(const nlohmann::json &data) override
+        {
             if (data.contains("engine"))
                 engine.loadFromJson(data["engine"]);
             if (data.contains("confidence_threshold"))
@@ -22,7 +23,8 @@ namespace trt
                 classNames = data["class_names"].get<std::vector<std::string>>();
         }
 
-        static ClassifierConfig load(const std::string &filename) {
+        static ClassifierConfig load(const std::string &filename)
+        {
             std::ifstream file(filename);
             auto data = nlohmann::json::parse(file);
             ClassifierConfig config;
@@ -36,10 +38,10 @@ namespace trt
     class Classifier : public ModelProcessor
     {
     public:
-        Classifier(const ClassifierConfig& t_config) : ModelProcessor(t_config.engine), config(t_config){}
+        Classifier(const ClassifierConfig &t_config) : ModelProcessor(t_config.engine), config(t_config) {}
         Detection process(const cv::Mat &image);
         const std::string getClassName(int class_id) const;
-        const ClassifierConfig& getConfig() const { return config; };
+        const ClassifierConfig &getConfig() const { return config; };
 
     protected:
         bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;

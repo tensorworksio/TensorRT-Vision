@@ -29,7 +29,7 @@ meson compile -C build
 Configure your Engine settings in `config.json`
 
 
-## Examples
+## Apps
 ```bash
 - [x] Object classification
 - [x] Object re-identification

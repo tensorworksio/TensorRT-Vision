@@ -1,8 +1,8 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include "engine/engine.hpp"
-#include "common/cuda_utils.hpp"
-#include "common/tensorrt_utils.hpp"
+#include "utils/cuda_utils.hpp"
+#include "utils/tensorrt_utils.hpp"
 
 namespace fs = boost::filesystem;
 

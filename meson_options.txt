@@ -1,2 +1,1 @@
-option('build_examples', type : 'boolean', value : false, description : 'Build example programs')
-
+option('build_apps', type: 'array', choices: ['yolo', 'reid', 'classifier'], value: ['reid'], description: 'List of apps to build')

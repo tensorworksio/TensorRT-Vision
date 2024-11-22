@@ -7,7 +7,7 @@
 #include <string>
 #include <NvInfer.h>
 #include "engine/logger.hpp"
-#include "common/json_utils.hpp"
+#include "utils/json_utils.hpp"
 #include <opencv2/opencv.hpp>
 
 namespace trt
@@ -36,7 +36,8 @@ namespace trt
 
         std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<EngineConfig>(*this); }
 
-        void loadFromJson(const nlohmann::json &data) override {
+        void loadFromJson(const nlohmann::json &data) override
+        {
             if (data.contains("model_path"))
                 modelPath = data["model_path"].get<std::string>();
             if (data.contains("batch_size"))

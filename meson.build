@@ -1,5 +1,5 @@
-project('engine.trt', 'cpp',
-        version : '0.1',
+project('TensorRT-Vision', 'cpp',
+        version : '0.2',
         default_options : ['warning_level=3', 'cpp_std=c++17'])
 
 # Dependencies
@@ -50,7 +50,8 @@ engine_dep = declare_dependency(
 # Make engine_dep available to parent projects
 meson.override_dependency('engine', engine_dep)
 
-# Build examples (optional)
-if get_option('build_examples')
-  subdir('examples')
+# Build apps
+apps = get_option('build_apps')
+if apps.length() > 0
+    subdir('app')
 endif
