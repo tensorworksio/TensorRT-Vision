@@ -1,4 +1,5 @@
-#include "engine/processor.hpp"
+#include <engine/processor.hpp>
+#include <utils/vector_utils.hpp>
 
 namespace trt
 {
@@ -16,24 +17,69 @@ namespace trt
 
     bool ModelProcessor::process(const cv::Mat &image, std::vector<Detection> &detections)
     {
-        bool success;
+        // Single batch SISO inference (SBSISO)
+        bool success = true;
         cv::Mat processedImage;
-        std::vector<float> featureVector;
+        std::vector<float> featureBatch;
 
         success = preprocess(image, processedImage);
         if (!success)
         {
-            std::runtime_error("Model preprocessing failed");
+            throw std::runtime_error("Model preprocessing failed.");
         }
-        success = engine->runInference(processedImage, featureVector);
+        success = engine->runInference(processedImage, featureBatch);
         if (!success)
         {
-            std::runtime_error("Model inference failed");
+            throw std::runtime_error("Model inference failed.");
         }
-        success = postprocess(featureVector, detections);
+        success = postprocess(featureBatch, detections);
         if (!success)
         {
-            std::runtime_error("Model postprocessing failed");
+            throw std::runtime_error("Model postprocessing failed.");
+        }
+        return success;
+    }
+
+    bool ModelProcessor::process(const std::vector<cv::Mat> &images, std::vector<std::vector<Detection>> &detections)
+    {
+        // Multi batch SISO processing (MBSISO)
+        bool success = true;
+        std::vector<cv::Mat> processedImages;
+        std::vector<std::vector<float>> features;
+
+        success = preprocess(images, processedImages);
+        if (!success)
+        {
+            throw std::runtime_error("Model preprocessing failed.");
+        }
+
+        int index = 0;
+        size_t batchSize;
+        std::vector<cv::Mat> imageBatch;
+        std::vector<std::vector<float>> featureBatch;
+
+        size_t maxBatchSize = static_cast<size_t>(engine->getOptions().maxBatchSize);
+        size_t nBatch = (images.size() + maxBatchSize - 1) / maxBatchSize;
+
+        for (size_t i = 0; i < nBatch; ++i)
+        {
+            batchSize = std::min(maxBatchSize, images.size() - index);
+            imageBatch = vector_ops::slice(processedImages, index, index + batchSize);
+            success = engine->runInference(imageBatch, featureBatch);
+            if (!success)
+            {
+                throw std::runtime_error("Model inference failed.");
+            }
+            features.insert(features.end(), featureBatch.begin(), featureBatch.end());
+            featureBatch.clear();
+        }
+        std::cout << "feature size: " << features.size() << std::endl;
+
+        success = postprocess(features, detections);
+        std::cout << "detections size: " << detections.size() << std::endl;
+        if (!success)
+        {
+            throw std::runtime_error("Model postprocessing failed.");
         }
         return success;
     }
@@ -44,40 +90,50 @@ namespace trt
         const auto &inputDims = engine->getInputDims();
         assert(inputDims.size() == 1);
 
-        cv::Size size(inputDims[0].d[1], inputDims[0].d[2]);
+        cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
         return preprocess(srcImg, dstImg, size);
     }
 
-    bool ModelProcessor::preprocess(std::vector<cv::Mat> &inputBatch, cv::Size size)
-    {
-        bool success = true;
-        for (cv::Mat &img : inputBatch)
-        {
-            success = success && preprocess(img, img, size);
-        }
-        return success;
-    }
-
-    bool ModelProcessor::preprocess(std::vector<cv::Mat> &inputBatch)
+    bool ModelProcessor::preprocess(const std::vector<cv::Mat> &inputBatch, std::vector<cv::Mat> &outputBatch)
     {
         // Multi batch SISO preprocessing (MBSISO)
         const auto &inputDims = engine->getInputDims();
         assert(inputDims.size() == 1);
 
-        cv::Size size(inputDims[0].d[1], inputDims[0].d[2]);
-        return preprocess(inputBatch, size);
+        cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
+        return preprocess(inputBatch, outputBatch, size);
     }
 
-    bool ModelProcessor::preprocess(std::vector<std::vector<cv::Mat>> &inputs)
+    bool ModelProcessor::preprocess(const std::vector<cv::Mat> &inputBatch, std::vector<cv::Mat> &outputBatch, cv::Size size)
     {
-        // MIMO preprocessing
         bool success = true;
-        const auto &inputDims = engine->getInputDims();
-        for (size_t i = 0; i < inputDims.size(); ++i)
+        cv::Mat processedImage;
+        for (const auto &image : inputBatch)
         {
-            cv::Size size(inputDims[i].d[1], inputDims[i].d[2]);
-            success = success && preprocess(inputs[i], size);
+            success = success && preprocess(image, processedImage, size);
+            if (!success)
+            {
+                return false;
+            }
+            outputBatch.push_back(processedImage);
         }
         return success;
     }
+
+    bool ModelProcessor::postprocess(std::vector<std::vector<float>> &featureBatch, std::vector<std::vector<Detection>> &detectionBatch)
+    {
+        // Multi batch SISO postprocessing (MBSISO)
+        for (auto &features : featureBatch)
+        {
+            std::vector<Detection> detections;
+            bool success = postprocess(features, detections);
+            if (!success)
+            {
+                return false;
+            }
+            detectionBatch.push_back(detections);
+        }
+        return true;
+    }
+
 } // namespace trt

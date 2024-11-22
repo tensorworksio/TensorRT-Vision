@@ -1,16 +1,17 @@
 #pragma once
-
 #include <fstream>
-#include "utils/json_utils.hpp"
-#include "engine/processor.hpp"
+#include <utils/json_utils.hpp>
+
+#include "processor.hpp"
 
 namespace trt
 {
-
     struct ReIdConfig : public JsonConfig
     {
-        EngineConfig engine;
+        EngineConfig engine{};
         float confidenceThreshold = 0.5f;
+
+        std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<ReIdConfig>(*this); }
 
         void loadFromJson(const nlohmann::json &data) override
         {
@@ -24,26 +25,27 @@ namespace trt
         {
             std::ifstream file(filename);
             auto data = nlohmann::json::parse(file);
+
             ReIdConfig config;
-            config.loadFromJson(data);
+            config.loadFromJson(data["reid"]);
             return config;
         }
-
-        std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<ReIdConfig>(*this); }
     };
 
     class ReId : public ModelProcessor
     {
     public:
-        ReId(const ReIdConfig &t_config) : ModelProcessor(config.engine), config(t_config) {}
+        ReId(const ReIdConfig &config) : ModelProcessor(config.engine), m_config(config) {}
         void process(const cv::Mat &image, std::vector<float> &featureVector);
-        const ReIdConfig &getConfig() const { return config; };
+        void process(const std::vector<cv::Mat> &images, std::vector<std::vector<float>> &features);
+        const ReIdConfig &getConfig() const { return m_config; };
 
     protected:
         bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
         bool postprocess(std::vector<float> &featureVector, std::vector<Detection> &detections) override;
 
     private:
-        const ReIdConfig config;
+        const ReIdConfig m_config;
     };
+
 } // namespace trt

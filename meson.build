@@ -26,7 +26,8 @@ engine_src = files(
   'src/engine.cpp',
   'src/processor.cpp',
   'src/classifier.cpp',
-  'src/yolo.cpp'
+  'src/yolo.cpp',
+  'src/reid.cpp'
 )
 
 # Include 

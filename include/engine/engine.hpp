@@ -68,6 +68,7 @@ namespace trt
         bool runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<float>> &outputBatch);
         bool runInference(const std::vector<std::vector<cv::Mat>> &inputs, std::vector<std::vector<std::vector<float>>> &outputs);
 
+        [[nodiscard]] const EngineOptions &getOptions() const { return m_options; };
         [[nodiscard]] const std::vector<nvinfer1::Dims3> &getInputDims() const { return m_inputDims; };
         [[nodiscard]] const std::vector<nvinfer1::Dims> &getOutputDims() const { return m_outputDims; };
 
