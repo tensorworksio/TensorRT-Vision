@@ -1,0 +1,13 @@
+torch
+torchreid
+torchvision
+tensorboard
+
+onnx
+
+Cython
+scipy
+pillow
+opencv-python
+
+gdown
