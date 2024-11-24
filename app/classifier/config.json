@@ -1,9 +1,0 @@
-{
-    "description": "yolov8n-cls config",
-    "engine": {
-        "model_path": "examples/classification/data/yolov8n-cls-fp16.engine",
-        "precision": 16,
-        "batch_size": 1
-    },
-    "confidence_threshold": 0
-}
