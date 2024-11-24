@@ -1,4 +1,11 @@
+classifier_src = files(
+    'classifier.cpp',
+    'main.cpp'
+)
+
 executable('classifier',
-    'main.cpp',
-    dependencies : [engine_dep]
+    classifier_src,
+    dependencies: [engine_dep],
+    include_directories: include_directories('.'),
+    install: true
 )

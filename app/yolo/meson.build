@@ -1,4 +1,11 @@
+yolo_src = files(
+    'yolo.cpp',
+    'main.cpp'
+)
+
 executable('yolo',
-    'main.cpp',
-    dependencies : [engine_dep]
+    yolo_src,
+    dependencies: [engine_dep],
+    include_directories: include_directories('.'),
+    install: true
 )

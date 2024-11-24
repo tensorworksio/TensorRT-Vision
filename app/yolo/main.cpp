@@ -1,6 +1,9 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
+#include <utils/detection_utils.hpp>
+
+#include "yolo.hpp"
 
 namespace po = boost::program_options;
 
@@ -20,6 +23,33 @@ int main(int argc, char *argv[])
     }
 
     po::notify(vm);
+
+    // Input
+    std::string imagePath = vm["input"].as<std::string>();
+    cv::Mat image = cv::imread(imagePath, cv::IMREAD_COLOR);
+    if (image.empty())
+    {
+        std::cerr << "Error: Could not load image " << imagePath << std::endl;
+        return 1;
+    }
+
+    // Config
+    YoloConfig config;
+    if (vm.count("config"))
+    {
+        std::string configPath = vm["config"].as<std::string>();
+        config = YoloConfig::load(configPath);
+    }
+
+    // Load model
+    std::vector<Detection> detections;
+    auto detector = YoloFactory::create(config);
+    detector->process(image, detections);
+
+    for (auto &det : detections)
+    {
+        std::cout << det.class_id << std::endl;
+    }
 
     return 0;
 }

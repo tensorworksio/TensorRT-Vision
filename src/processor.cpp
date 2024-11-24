@@ -73,10 +73,7 @@ namespace trt
             features.insert(features.end(), featureBatch.begin(), featureBatch.end());
             featureBatch.clear();
         }
-        std::cout << "feature size: " << features.size() << std::endl;
-
         success = postprocess(features, detections);
-        std::cout << "detections size: " << detections.size() << std::endl;
         if (!success)
         {
             throw std::runtime_error("Model postprocessing failed.");

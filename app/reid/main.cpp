@@ -1,8 +1,9 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
-#include <engine/engine.hpp>
 #include <utils/detection_utils.hpp>
+
+#include <engine/engine.hpp>
 
 namespace po = boost::program_options;
 bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)

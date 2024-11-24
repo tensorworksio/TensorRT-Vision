@@ -1,9 +1,9 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
-
-#include <engine/classifier.hpp>
 #include <utils/detection_utils.hpp>
+
+#include "classifier.hpp"
 
 namespace po = boost::program_options;
 
@@ -34,16 +34,16 @@ int main(int argc, char *argv[])
     }
 
     // Config
-    trt::ClassifierConfig config;
+    ClassifierConfig config;
     if (vm.count("config"))
     {
         std::string configPath = vm["config"].as<std::string>();
-        config = trt::ClassifierConfig::load(configPath);
+        config = ClassifierConfig::load(configPath);
     }
 
     // Load model
     Detection det;
-    trt::Classifier classifier(config);
+    Classifier classifier(config);
     det = classifier.process(image);
     std::cout << "Category: " << det.class_name << std::endl;
     std::cout << "Confidence: " << det.probability << std::endl;

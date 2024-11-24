@@ -1,4 +1,11 @@
+reid_src = files(
+    'reid.cpp',
+    'main.cpp'
+)
+
 executable('reid',
-    'main.cpp',
-    dependencies : [engine_dep]
+    reid_src,
+    dependencies: [engine_dep],
+    include_directories: include_directories('.'),
+    install: true
 )
