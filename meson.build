@@ -1,6 +1,6 @@
 project('TensorRT-Vision', 'cpp',
         version : '0.2',
-        default_options : ['warning_level=3', 'cpp_std=c++17'])
+        default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'optimization=0'])
 
 # Dependencies
 cuda_dep = dependency('cuda')

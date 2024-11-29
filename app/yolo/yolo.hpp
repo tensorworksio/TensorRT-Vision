@@ -62,7 +62,7 @@ struct YoloConfig : JsonConfig
 class Yolo : public trt::ModelProcessor
 {
 public:
-    Yolo(const YoloConfig &t_config) : ModelProcessor(config.engine), config(t_config) {};
+    Yolo(const YoloConfig &t_config) : ModelProcessor(t_config.engine), config(t_config) {};
 
     virtual ~Yolo() = default;
     const std::string getClassName(int class_id) const;
