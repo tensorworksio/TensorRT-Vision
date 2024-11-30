@@ -1,4 +1,5 @@
 #include "yolo.hpp"
+#include <opencv2/dnn.hpp>
 
 const std::string Yolo::getClassName(int class_id) const
 {
@@ -29,7 +30,7 @@ bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
     return !dstImg.empty();
 }
 
-bool Yolov7::postprocess(std::vector<float> &featureVector, std::vector<Detection> &detections)
+std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVector)
 {
     std::vector<cv::Rect> bboxes;
     std::vector<float> scores;
@@ -43,7 +44,7 @@ bool Yolov7::postprocess(std::vector<float> &featureVector, std::vector<Detectio
     auto numChannels = outputDims[0].d[2];
     auto numClasses = numChannels - 5;
 
-    cv::Mat output = cv::Mat(numAnchors, numChannels, CV_32F, featureVector.data());
+    cv::Mat output = cv::Mat(numAnchors, numChannels, CV_32F, const_cast<float *>(featureVector.data()));
 
     for (int i = 0; i < numAnchors; i++)
     {
@@ -84,6 +85,10 @@ bool Yolov7::postprocess(std::vector<float> &featureVector, std::vector<Detectio
     // Non Maximum Suppression
     cv::dnn::NMSBoxes(bboxes, scores, config.probabilityThreshold, config.nmsThreshold, indices, config.nmsEta, config.topK);
 
+    // Fill output detections
+    std::vector<Detection> detections;
+    detections.reserve(indices.size());
+
     for (auto &idx : indices)
     {
         Detection det{};
@@ -94,10 +99,10 @@ bool Yolov7::postprocess(std::vector<float> &featureVector, std::vector<Detectio
         detections.push_back(det);
     }
 
-    return true;
+    return detections;
 }
 
-bool Yolov8::postprocess(std::vector<float> &featureVector, std::vector<Detection> &detections)
+std::vector<Detection> Yolov8::postprocess(const std::vector<float> &featureVector)
 {
     std::vector<cv::Rect> bboxes;
     std::vector<float> scores;
@@ -111,7 +116,7 @@ bool Yolov8::postprocess(std::vector<float> &featureVector, std::vector<Detectio
     auto numAnchors = outputDims[0].d[2];
     auto numClasses = numChannels - 4;
 
-    cv::Mat output = cv::Mat(numChannels, numAnchors, CV_32F, featureVector.data());
+    cv::Mat output = cv::Mat(numChannels, numAnchors, CV_32F, const_cast<float *>(featureVector.data()));
     output = output.t();
 
     for (int i = 0; i < numAnchors; i++)
@@ -152,6 +157,10 @@ bool Yolov8::postprocess(std::vector<float> &featureVector, std::vector<Detectio
     // Non Maximum Suppression
     cv::dnn::NMSBoxes(bboxes, scores, config.probabilityThreshold, config.nmsThreshold, indices, config.nmsEta, config.topK);
 
+    // Fill output detections
+    std::vector<Detection> detections;
+    detections.reserve(indices.size());
+
     for (auto &idx : indices)
     {
         Detection det{};
@@ -162,5 +171,5 @@ bool Yolov8::postprocess(std::vector<float> &featureVector, std::vector<Detectio
         detections.push_back(det);
     }
 
-    return true;
+    return detections;
 }

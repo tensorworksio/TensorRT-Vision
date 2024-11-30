@@ -42,9 +42,8 @@ int main(int argc, char *argv[])
     }
 
     // Load model
-    std::vector<Detection> detections;
     auto detector = YoloFactory::create(config);
-    detector->process(image, detections);
+    auto detections = detector->process(image);
 
     for (auto &det : detections)
     {

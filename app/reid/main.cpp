@@ -44,8 +44,7 @@ int main(int argc, char *argv[])
 
     // Load model
     ReId reid(config);
-    std::vector<float> featureVector;
-    reid.process(image, featureVector);
+    auto featureVector = reid.process(image);
 
     std::cout << "SIZE : " << featureVector.size() << std::endl;
     std::cout << "NORM : " << vector_ops::dot(featureVector, featureVector) << std::endl;

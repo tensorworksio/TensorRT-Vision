@@ -29,17 +29,15 @@ struct ReIdConfig : public JsonConfig
     }
 };
 
-class ReId : public trt::ModelProcessor
+class ReId : public trt::ModelProcessor<std::vector<float>>
 {
 public:
     ReId(const ReIdConfig &config) : ModelProcessor(config.engine), m_config(config) {}
-    void process(const cv::Mat &image, std::vector<float> &featureVector);
-    void process(const std::vector<cv::Mat> &images, std::vector<std::vector<float>> &features);
     const ReIdConfig &getConfig() const { return m_config; };
 
 protected:
     bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
-    bool postprocess(std::vector<float> &featureVector, std::vector<Detection> &detections) override;
+    std::vector<float> postprocess(const std::vector<float> &featureVector) override;
 
 private:
     const ReIdConfig m_config;

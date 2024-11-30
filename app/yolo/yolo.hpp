@@ -1,7 +1,7 @@
 #pragma once
 #include <fstream>
-#include <opencv2/dnn.hpp>
 #include <utils/json_utils.hpp>
+#include <utils/detection_utils.hpp>
 #include <engine/processor.hpp>
 
 enum class YoloVersion : int
@@ -59,7 +59,7 @@ struct YoloConfig : JsonConfig
     std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<YoloConfig>(*this); }
 };
 
-class Yolo : public trt::ModelProcessor
+class Yolo : public trt::ModelProcessor<std::vector<Detection>>
 {
 public:
     Yolo(const YoloConfig &t_config) : ModelProcessor(t_config.engine), config(t_config) {};
@@ -85,7 +85,7 @@ public:
     Yolov7(const YoloConfig &t_config) : Yolo(t_config) {};
 
 private:
-    bool postprocess(std::vector<float> &featureVector, std::vector<Detection> &detections) override;
+    std::vector<Detection> postprocess(const std::vector<float> &featureVector) override;
 };
 
 class Yolov8 : public Yolo
@@ -94,7 +94,7 @@ public:
     Yolov8(const YoloConfig &t_config) : Yolo(t_config) {};
 
 private:
-    bool postprocess(std::vector<float> &featureVector, std::vector<Detection> &detections) override;
+    std::vector<Detection> postprocess(const std::vector<float> &featureVector) override;
 };
 
 class YoloFactory

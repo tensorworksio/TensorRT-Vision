@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <utils/json_utils.hpp>
+#include <utils/detection_utils.hpp>
 #include <engine/processor.hpp>
 
 struct ClassifierConfig : JsonConfig
@@ -32,17 +33,16 @@ struct ClassifierConfig : JsonConfig
     std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<ClassifierConfig>(*this); }
 };
 
-class Classifier : public trt::ModelProcessor
+class Classifier : public trt::ModelProcessor<Detection>
 {
 public:
     Classifier(const ClassifierConfig &t_config) : ModelProcessor(t_config.engine), config(t_config) {}
-    Detection process(const cv::Mat &image);
     const std::string getClassName(int class_id) const;
     const ClassifierConfig &getConfig() const { return config; };
 
 protected:
     bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
-    bool postprocess(std::vector<float> &featureVector, std::vector<Detection> &detections) override;
+    Detection postprocess(const std::vector<float> &featureVector) override;
 
 private:
     const ClassifierConfig config;

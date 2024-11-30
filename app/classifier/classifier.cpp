@@ -9,26 +9,6 @@ const std::string Classifier::getClassName(int class_id) const
     return config.classNames[class_id];
 }
 
-Detection Classifier::process(const cv::Mat &image)
-{
-    std::vector<Detection> detections;
-    ModelProcessor::process(image, detections);
-    if (detections.empty())
-    {
-        throw std::runtime_error("Classification result should never be empty");
-    }
-
-    Detection det{};
-    auto maxElement = std::max_element(detections.begin(), detections.end(), [](const Detection &a, const Detection &b)
-                                       { return a.probability < b.probability; });
-    if (maxElement->probability >= config.confidenceThreshold)
-    {
-        det = *maxElement;
-    }
-
-    return det;
-}
-
 bool Classifier::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
 {
     // The model expects RGB image
@@ -43,15 +23,15 @@ bool Classifier::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size siz
     return !dstImg.empty();
 }
 
-bool Classifier::postprocess(std::vector<float> &featureVector, std::vector<Detection> &detections)
+Detection Classifier::postprocess(const std::vector<float> &featureVector)
 {
-    detections.resize(featureVector.size());
-    for (size_t i = 0; i < featureVector.size(); ++i)
+    Detection det;
+    auto maxElement = std::max_element(featureVector.begin(), featureVector.end());
+    if (*maxElement >= config.confidenceThreshold)
     {
-        detections[i].class_id = static_cast<int>(i);
-        detections[i].probability = featureVector[i];
-        detections[i].class_name = getClassName(detections[i].class_id);
+        det.class_id = std::distance(featureVector.begin(), maxElement);
+        det.probability = *maxElement;
+        det.class_name = getClassName(det.class_id);
     }
-
-    return !detections.empty();
+    return det;
 }
