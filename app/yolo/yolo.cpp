@@ -32,17 +32,21 @@ bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
 
 std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVector)
 {
-    std::vector<cv::Rect> bboxes;
-    std::vector<float> scores;
-    std::vector<int> class_ids;
-    std::vector<int> indices;
-
     const auto &outputDims = engine->getOutputDims();
     assert(outputDims.size() == 1);
 
     auto numAnchors = outputDims[0].d[1];
     auto numChannels = outputDims[0].d[2];
     auto numClasses = numChannels - 5;
+
+    std::vector<cv::Rect> bboxes;
+    bboxes.reserve(numAnchors);
+
+    std::vector<float> scores;
+    scores.reserve(numAnchors);
+
+    std::vector<int> class_ids;
+    class_ids.reserve(numAnchors);
 
     cv::Mat output = cv::Mat(numAnchors, numChannels, CV_32F, const_cast<float *>(featureVector.data()));
 
@@ -54,6 +58,7 @@ std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVect
         auto clsScoresPtr = rowPtr + 5;
         auto maxClsPtr = std::max_element(clsScoresPtr, clsScoresPtr + numClasses);
         float score = (*maxClsPtr) * (*objScorePtr);
+        int class_id = maxClsPtr - clsScoresPtr;
 
         if (score < config.probabilityThreshold)
         {
@@ -70,19 +75,13 @@ std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVect
         float x1 = std::clamp((x + 0.5f * w) * m_ratioWidth, 0.f, m_imgWidth);
         float y1 = std::clamp((y + 0.5f * h) * m_ratioHeight, 0.f, m_imgHeight);
 
-        int class_id = maxClsPtr - clsScoresPtr;
-        cv::Rect_<float> bbox;
-        bbox.x = x0;
-        bbox.y = y0;
-        bbox.width = x1 - x0;
-        bbox.height = y1 - y0;
-
-        bboxes.push_back(bbox);
-        class_ids.push_back(class_id);
-        scores.push_back(score);
+        bboxes.emplace_back(cv::Rect2f(x0, y0, x1 - x0, y1 - y0));
+        class_ids.emplace_back(class_id);
+        scores.emplace_back(score);
     }
 
     // Non Maximum Suppression
+    std::vector<int> indices;
     cv::dnn::NMSBoxes(bboxes, scores, config.probabilityThreshold, config.nmsThreshold, indices, config.nmsEta, config.topK);
 
     // Fill output detections
@@ -91,12 +90,11 @@ std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVect
 
     for (auto &idx : indices)
     {
-        Detection det{};
-        det.probability = scores[idx];
-        det.class_id = class_ids[idx];
-        det.class_name = getClassName(det.class_id);
-        det.bbox = bboxes[idx];
-        detections.push_back(det);
+        detections.emplace_back(Detection{
+            class_ids[idx],
+            scores[idx],
+            bboxes[idx],
+            getClassName(class_ids[idx])});
     }
 
     return detections;
@@ -104,17 +102,21 @@ std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVect
 
 std::vector<Detection> Yolov8::postprocess(const std::vector<float> &featureVector)
 {
-    std::vector<cv::Rect> bboxes;
-    std::vector<float> scores;
-    std::vector<int> class_ids;
-    std::vector<int> indices;
-
     const auto &outputDims = engine->getOutputDims();
     assert(outputDims.size() == 1);
 
     auto numChannels = outputDims[0].d[1];
     auto numAnchors = outputDims[0].d[2];
     auto numClasses = numChannels - 4;
+
+    std::vector<cv::Rect> bboxes;
+    bboxes.reserve(numAnchors);
+
+    std::vector<float> scores;
+    scores.reserve(numAnchors);
+
+    std::vector<int> class_ids;
+    class_ids.reserve(numAnchors);
 
     cv::Mat output = cv::Mat(numChannels, numAnchors, CV_32F, const_cast<float *>(featureVector.data()));
     output = output.t();
@@ -126,6 +128,7 @@ std::vector<Detection> Yolov8::postprocess(const std::vector<float> &featureVect
         auto scoresPtr = rowPtr + 4;
         auto maxClsPtr = std::max_element(scoresPtr, scoresPtr + numClasses);
         float score = *maxClsPtr;
+        int class_id = maxClsPtr - scoresPtr;
 
         if (score < config.probabilityThreshold)
         {
@@ -142,19 +145,13 @@ std::vector<Detection> Yolov8::postprocess(const std::vector<float> &featureVect
         float x1 = std::clamp((x + 0.5f * w) * m_ratioWidth, 0.f, m_imgWidth);
         float y1 = std::clamp((y + 0.5f * h) * m_ratioHeight, 0.f, m_imgHeight);
 
-        int class_id = maxClsPtr - scoresPtr;
-        cv::Rect_<float> bbox;
-        bbox.x = x0;
-        bbox.y = y0;
-        bbox.width = x1 - x0;
-        bbox.height = y1 - y0;
-
-        bboxes.push_back(bbox);
-        class_ids.push_back(class_id);
-        scores.push_back(score);
+        bboxes.emplace_back(cv::Rect2f(x0, y0, x1 - x0, y1 - y0));
+        class_ids.emplace_back(class_id);
+        scores.emplace_back(score);
     }
 
     // Non Maximum Suppression
+    std::vector<int> indices;
     cv::dnn::NMSBoxes(bboxes, scores, config.probabilityThreshold, config.nmsThreshold, indices, config.nmsEta, config.topK);
 
     // Fill output detections
@@ -163,12 +160,11 @@ std::vector<Detection> Yolov8::postprocess(const std::vector<float> &featureVect
 
     for (auto &idx : indices)
     {
-        Detection det{};
-        det.probability = scores[idx];
-        det.class_id = class_ids[idx];
-        det.class_name = getClassName(det.class_id);
-        det.bbox = bboxes[idx];
-        detections.push_back(det);
+        detections.emplace_back(Detection{
+            class_ids[idx],
+            scores[idx],
+            bboxes[idx],
+            getClassName(class_ids[idx])});
     }
 
     return detections;
