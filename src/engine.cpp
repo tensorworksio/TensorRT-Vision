@@ -55,7 +55,7 @@ namespace trt
 
         // Create a runtime
         m_runtime = std::unique_ptr<nvinfer1::IRuntime>(nvinfer1::createInferRuntime(m_logger));
-        if (m_runtime == nullptr)
+        if (!m_runtime)
         {
             m_logger.log(NvLogger::Severity::kERROR, "Failed to create InferRuntime");
             return false;
@@ -66,7 +66,7 @@ namespace trt
 
         // Create engine
         m_engine = std::unique_ptr<nvinfer1::ICudaEngine>(m_runtime->deserializeCudaEngine(buffer.data(), buffer.size()));
-        if (m_engine == nullptr)
+        if (!m_engine)
         {
             m_logger.log(NvLogger::Severity::kERROR, "Failed to deserialize engine");
             return false;
@@ -74,7 +74,7 @@ namespace trt
 
         // Create execution context
         m_context = std::unique_ptr<nvinfer1::IExecutionContext>(m_engine->createExecutionContext());
-        if (m_context == nullptr)
+        if (!m_context)
         {
             m_logger.log(NvLogger::Severity::kERROR, "Failed to create execution context");
             return false;
@@ -245,11 +245,8 @@ namespace trt
         cudaStream_t inferenceCudaStream;
         cuda::checkCudaErrorCode(cudaStreamCreate(&inferenceCudaStream));
 
-        bool status; // Used for error checking
-
         // Load inputs to CUDA memory
-        status = prepareInputs(inputs, inferenceCudaStream, batchSize);
-        if (!status)
+        if (!prepareInputs(inputs, inferenceCudaStream, batchSize))
         {
             return false;
         }
@@ -263,26 +260,24 @@ namespace trt
         // Set the address of the input and output buffers
         for (size_t i = 0; i < m_buffers.size(); ++i)
         {
-            status = m_context->setTensorAddress(m_IOTensorNames[i].c_str(), m_buffers[i]);
-            if (!status)
+            if (!m_context->setTensorAddress(m_IOTensorNames[i].c_str(), m_buffers[i]))
             {
                 return false;
             }
         }
 
         // Run inference
-        status = m_context->enqueueV3(inferenceCudaStream);
-        if (!status)
+        if (!m_context->enqueueV3(inferenceCudaStream))
         {
             return false;
         }
 
         // Copy the outputs back to CPU
-        status = prepareOutputs(outputs, inferenceCudaStream, batchSize);
-        if (!status)
+        if (!prepareOutputs(outputs, inferenceCudaStream, batchSize))
         {
             return false;
         }
+
         // Synchronize the cuda stream
         cuda::checkCudaErrorCode(cudaStreamSynchronize(inferenceCudaStream));
         cuda::checkCudaErrorCode(cudaStreamDestroy(inferenceCudaStream));
@@ -330,12 +325,11 @@ namespace trt
 
     void setEngineOptions(EngineOptions &options, int batchSize, Precision precision)
     {
-        // Specify what precision to use for inference. FP16 is approximately twice as fast as FP32.
+        // Specify what precision to use for inference. FP16 is approximately twice as fast as FP32
         options.precision = precision;
-        // If the model does not support dynamic batch size, then the below two parameters must be set to 1.
-        // Specify the batch size to optimize for.
+        // Specify the batch size to optimize for
         options.optBatchSize = batchSize;
-        // Specify the maximum batch size we plan on running.
+        // Specify the maximum batch size we plan on running
         options.maxBatchSize = batchSize;
     }
 
