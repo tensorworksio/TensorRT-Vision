@@ -9,7 +9,7 @@ def parse_arguments():
     parser.add_argument("-m", "--model", type=str, help="Specify model name for details or export")
     parser.add_argument("-e", "--export", action="store_true", help="Export the specified model to ONNX")
     parser.add_argument("-o", "--output", type=str, default=None, help="Output path for ONNX model")
-    parser.add_argument("-s", "--size", type=int, nargs=2, default=[256, 128], help="Input size (width height)")
+    parser.add_argument("-s", "--size", type=int, nargs=2, default=[256, 128], help="Input size (height width)")
     return parser
 
 
