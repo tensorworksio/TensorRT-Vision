@@ -13,12 +13,12 @@ YOLO object detection using TensorRT for optimized inference.
 ```shell
 python3 -m venv venv
 ./venv/bin/pip3 install ultralytics onnx onnxsim
-./venv/bin/yolo export --model=yolov8n.pt --format=onnx --opset=12
+./venv/bin/yolo export --model=yolo11n.pt --format=onnx --opset=12
 ```
 
 2. Convert to TensorRT engine:
 ```shell
-trtexec --onnx=yolov8n.onnx --saveEngine=yolov8n.engine --fp16
+trtexec --onnx=yolo11n.onnx --saveEngine=yolo11n.engine --fp16
 ```
 
 ## Configure
@@ -26,20 +26,21 @@ Create `config.json`:
 ```json
 {
   "yolo": {
+    "version": 11,
+    "probability_threshold": 0.25,
+    "nms_threshold": 0.45,
+    "class_names": ["class1", "class2"],
+
     "engine": {
       "model_path": "path/to/yolo.engine",
       "batch_size": 1,
       "precision": 16
-    },
-    "version": 8,
-    "probability_threshold": 0.25,
-    "nms_threshold": 0.45,
-    "class_names": ["class1", "class2"]
+    }
   }
 }
 ```
 
 ## Run
 ```shell
-./build/app/yolo/yolo -c config.json -i image.jpg
+./build/app/yolo/yolo -c config.json -i 0 -o webcam.mp4
 ```
