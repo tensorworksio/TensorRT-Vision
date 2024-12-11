@@ -1,4 +1,7 @@
 #include <string>
+#include <signal.h>
+#include <atomic>
+
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
 #include <types/detection.hpp>
@@ -6,10 +9,18 @@
 
 namespace po = boost::program_options;
 
+std::atomic<bool> running{true};
+
+void signalHandler([[maybe_unused]] int signum)
+{
+    running = false;
+}
+
 int main(int argc, char *argv[])
 {
     po::options_description desc("Allowed options");
-    desc.add_options()("help,h", "produce help message")("input,i", po::value<std::string>()->required(), "Input video file or camera index (0,1,...)")("config,c", po::value<std::string>(), "Path to model config")("output,o", po::value<std::string>(), "Output video file (optional)");
+    desc.add_options()("help,h", "produce help message")("input,i", po::value<std::string>()->required(), "Input video file or camera index (0,1,...)")("config,c", po::value<std::string>(), "Path to model config")("output,o", po::value<std::string>(), "Output video file (optional)")("display,d", po::bool_switch(), "Display video frames");
+    ;
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -21,6 +32,8 @@ int main(int argc, char *argv[])
     }
 
     po::notify(vm);
+
+    bool display = vm["display"].as<bool>() || !vm.count("output");
 
     // Input setup
     std::string inputPath = vm["input"].as<std::string>();
@@ -55,7 +68,7 @@ int main(int argc, char *argv[])
     if (vm.count("output"))
     {
         std::string outputPath = vm["output"].as<std::string>();
-        int fourcc = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
+        int fourcc = cv::VideoWriter::fourcc('m', 'p', '4', 'v');
         double fps = cap.get(cv::CAP_PROP_FPS);
         cv::Size frameSize(cap.get(cv::CAP_PROP_FRAME_WIDTH),
                            cap.get(cv::CAP_PROP_FRAME_HEIGHT));
@@ -67,10 +80,15 @@ int main(int argc, char *argv[])
         }
     }
 
-    cv::namedWindow("Detections", cv::WINDOW_AUTOSIZE);
-    cv::Mat frame;
+    if (display)
+    {
+        cv::namedWindow("Detections", cv::WINDOW_AUTOSIZE);
+    }
 
-    while (true)
+    cv::Mat frame;
+    signal(SIGINT, signalHandler);
+
+    while (running)
     {
         cap >> frame;
         if (frame.empty())
@@ -87,21 +105,30 @@ int main(int argc, char *argv[])
                         cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
         }
 
-        cv::imshow("Detections", frame);
+        if (display)
+        {
+            cv::imshow("Detections", frame);
+        }
 
         if (writer.isOpened())
         {
             writer.write(frame);
         }
 
-        // Break on 'q' press
-        if (cv::waitKey(1) == 'q')
-            break;
+        if (cv::waitKey(1) == 27)
+        {
+            running = false;
+        }
     }
 
-    cap.release();
-    writer.release();
-    cv::destroyAllWindows();
+    if (cap.isOpened())
+        cap.release();
+
+    if (writer.isOpened())
+        writer.release();
+
+    if (display)
+        cv::destroyAllWindows();
 
     return 0;
 }

@@ -18,7 +18,7 @@ TensorRT-Vision provides optimized inference for computer vision models using NV
 
 ## ⚙️ Requirements
 1. CUDA 12.6
-2. TensorRT 10.5.0
+2. TensorRT 10.7.0
 3. Python 3.12.3
 
 Follow installation instructions [here](https://gist.github.com/denguir/b21aa66ae7fb1089655dd9de8351a202)
