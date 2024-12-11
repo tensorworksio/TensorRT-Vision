@@ -32,5 +32,6 @@ Create `config.json`:
 
 ### Run
 ```shell
-./build/app/classifier/classifier -c config.json -i image.jpg
+cd build/app/classifier
+./classifier -i image.jpg -c config.json -d
 ```

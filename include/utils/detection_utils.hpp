@@ -1,6 +1,7 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
+#include <utils/vector_utils.hpp>
 
 inline cv::Mat letterbox(const cv::Mat &input, cv::Size new_shape, cv::Scalar color, bool auto_size, bool scale_fill, bool scaleup, int stride)
 {
@@ -55,25 +56,25 @@ inline cv::Mat letterbox(const cv::Mat &input, cv::Size new_shape, cv::Scalar co
 inline std::vector<float> softmax(const std::vector<float> &logits)
 {
     std::vector<float> exp_values(logits.size());
-    std::vector<float> probabilities(logits.size());
 
-    // Find max logit value for numerical stability
-    auto max_logit = std::max_element(logits.begin(), logits.end());
+    // Substract max_logit from all logits to avoid overflow in exponentiation
+    float max_logit = vector_ops::max(logits);
+    exp_values = vector_ops::exp(vector_ops::add(logits, -max_logit));
+    float sum_exp = vector_ops::sum(exp_values);
 
-    // Calculate exponentials and their sum
-    float sum_exp = 0.f;
-    for (size_t i = 0; i < logits.size(); ++i)
+    return vector_ops::mul(exp_values, 1.0f / sum_exp);
+}
+
+inline float cosineSimilarity(const std::vector<float> &vec1, const std::vector<float> &vec2)
+{
+    float dotProduct = vector_ops::dot(vec1, vec2);
+    float normVec1 = std::sqrt(vector_ops::dot(vec1, vec1));
+    float normVec2 = std::sqrt(vector_ops::dot(vec2, vec2));
+
+    if (normVec1 == 0.f || normVec2 == 0.f)
     {
-        // Substract max_logit for numerical stability
-        exp_values[i] = std::exp(logits[i] - *max_logit);
-        sum_exp += exp_values[i];
+        return 0.f;
     }
 
-    // Calculate softmax probabilities
-    for (size_t i = 0; i < logits.size(); ++i)
-    {
-        probabilities[i] = exp_values[i] / sum_exp;
-    }
-
-    return probabilities;
+    return (1.f + dotProduct / (normVec1 * normVec2)) / 2.f;
 }

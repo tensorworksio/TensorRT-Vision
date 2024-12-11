@@ -33,5 +33,6 @@ Create `config.json`:
 
 ## Run
 ```shell
-./build/app/reid/reid -c config.json -i image.jpg
+cd build/app/reid
+./reid -q image1.jpg -k image2.jpg -c config.json -d
 ```

@@ -42,5 +42,6 @@ Create `config.json`:
 
 ## Run
 ```shell
-./build/app/yolo/yolo -c config.json -i 0 -o webcam.mp4
+cd build/app/yolo
+.yolo -i 0 -o webcam.mp4 -c config.json -d
 ```
