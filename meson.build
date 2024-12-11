@@ -21,9 +21,11 @@ tensorrt_dep = declare_dependency(
   link_args : ['-L' + tensorrt_lib_dir, '-lnvinfer', '-lnvinfer_plugin', '-lcudart']
 )
 
+zmq_dep = dependency('libzmq')
+
 # Source files
 engine_src = files(
-  'src/engine.cpp',
+  'src/engine.cpp'
 )
 
 # Include 
@@ -34,7 +36,7 @@ engine_lib = shared_library(
   'engine', 
   sources : engine_src,
   include_directories : engine_inc,
-  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep],
+  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, zmq_dep],
   install : true
 )
 
@@ -42,7 +44,7 @@ engine_lib = shared_library(
 engine_dep = declare_dependency(
   link_with : engine_lib,
   include_directories : engine_inc,
-  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep]
+  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, zmq_dep]
 )
 
 # Make engine_dep available to parent projects

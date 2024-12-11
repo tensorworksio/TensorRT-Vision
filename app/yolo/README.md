@@ -4,8 +4,9 @@
 YOLO object detection using TensorRT for optimized inference.
 
 ## Supported Versions
-- Yolov7 ![Support](https://img.shields.io/badge/support-yes-brightgreen.svg)
-- Yolov8 ![Support](https://img.shields.io/badge/support-yes-brightgreen.svg)
+- [Yolov7](https://github.com/WongKinYiu/yolov7) ![Support](https://img.shields.io/badge/support-yes-brightgreen.svg)
+- [Yolov8](https://github.com/ultralytics/ultralytics/blob/main/docs/en/models/yolov8.md) ![Support](https://img.shields.io/badge/support-yes-brightgreen.svg)
+- [Yolov11](https://github.com/ultralytics/ultralytics/tree/main) ![Support](https://img.shields.io/badge/support-yes-brightgreen.svg)
 
 ## Export Model
 1. Export YOLO model to ONNX:

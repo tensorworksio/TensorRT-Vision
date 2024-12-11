@@ -2,7 +2,7 @@
 
 #include <fstream>
 #include <utils/json_utils.hpp>
-#include <utils/detection_utils.hpp>
+#include <types/detection.hpp>
 #include <engine/processor.hpp>
 
 struct ClassifierConfig : JsonConfig

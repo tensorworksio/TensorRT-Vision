@@ -1,7 +1,7 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
-#include <utils/detection_utils.hpp>
+#include <types/detection.hpp>
 
 #include "yolo.hpp"
 

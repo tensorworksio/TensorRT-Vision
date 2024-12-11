@@ -1,4 +1,5 @@
 #include "classifier.hpp"
+#include <utils/detection_utils.hpp>
 
 const std::string Classifier::getClassName(int class_id) const
 {

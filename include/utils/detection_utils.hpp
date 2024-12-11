@@ -1,17 +1,6 @@
 #pragma once
 
-#include <iostream>
 #include <opencv2/opencv.hpp>
-
-struct Detection
-{
-    int class_id;
-    float probability;
-    cv::Rect2f bbox;
-    std::string class_name;
-
-    std::vector<float> features{};
-};
 
 inline cv::Mat letterbox(const cv::Mat &input, cv::Size new_shape, cv::Scalar color, bool auto_size, bool scale_fill, bool scaleup, int stride)
 {

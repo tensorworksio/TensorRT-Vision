@@ -1,5 +1,6 @@
 #include "yolo.hpp"
 #include <opencv2/dnn.hpp>
+#include <utils/detection_utils.hpp>
 
 const std::string Yolo::getClassName(int class_id) const
 {
@@ -30,14 +31,14 @@ bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
     return !dstImg.empty();
 }
 
-std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVector)
+std::vector<Detection> Yolo::postprocess(const std::vector<float> &featureVector)
 {
     const auto &outputDims = engine->getOutputDims();
     assert(outputDims.size() == 1);
 
-    auto numAnchors = outputDims[0].d[1];
-    auto numChannels = outputDims[0].d[2];
-    auto numClasses = numChannels - 5;
+    auto numChannels = outputDims[0].d[1];
+    auto numAnchors = outputDims[0].d[2];
+    auto numClasses = numChannels - 4;
 
     std::vector<cv::Rect> bboxes;
     bboxes.reserve(numAnchors);
@@ -48,17 +49,17 @@ std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVect
     std::vector<int> class_ids;
     class_ids.reserve(numAnchors);
 
-    cv::Mat output = cv::Mat(numAnchors, numChannels, CV_32F, const_cast<float *>(featureVector.data()));
+    cv::Mat output = cv::Mat(numChannels, numAnchors, CV_32F, const_cast<float *>(featureVector.data()));
+    output = output.t();
 
     for (int i = 0; i < numAnchors; i++)
     {
         auto rowPtr = output.row(i).ptr<float>();
         auto bboxesPtr = rowPtr;
-        auto objScorePtr = rowPtr + 4;
-        auto clsScoresPtr = rowPtr + 5;
-        auto maxClsPtr = std::max_element(clsScoresPtr, clsScoresPtr + numClasses);
-        float score = (*maxClsPtr) * (*objScorePtr);
-        int class_id = maxClsPtr - clsScoresPtr;
+        auto scoresPtr = rowPtr + 4;
+        auto maxClsPtr = std::max_element(scoresPtr, scoresPtr + numClasses);
+        float score = *maxClsPtr;
+        int class_id = maxClsPtr - scoresPtr;
 
         if (score < config.probabilityThreshold)
         {
@@ -100,14 +101,14 @@ std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVect
     return detections;
 }
 
-std::vector<Detection> Yolov8::postprocess(const std::vector<float> &featureVector)
+std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVector)
 {
     const auto &outputDims = engine->getOutputDims();
     assert(outputDims.size() == 1);
 
-    auto numChannels = outputDims[0].d[1];
-    auto numAnchors = outputDims[0].d[2];
-    auto numClasses = numChannels - 4;
+    auto numAnchors = outputDims[0].d[1];
+    auto numChannels = outputDims[0].d[2];
+    auto numClasses = numChannels - 5;
 
     std::vector<cv::Rect> bboxes;
     bboxes.reserve(numAnchors);
@@ -118,17 +119,17 @@ std::vector<Detection> Yolov8::postprocess(const std::vector<float> &featureVect
     std::vector<int> class_ids;
     class_ids.reserve(numAnchors);
 
-    cv::Mat output = cv::Mat(numChannels, numAnchors, CV_32F, const_cast<float *>(featureVector.data()));
-    output = output.t();
+    cv::Mat output = cv::Mat(numAnchors, numChannels, CV_32F, const_cast<float *>(featureVector.data()));
 
     for (int i = 0; i < numAnchors; i++)
     {
         auto rowPtr = output.row(i).ptr<float>();
         auto bboxesPtr = rowPtr;
-        auto scoresPtr = rowPtr + 4;
-        auto maxClsPtr = std::max_element(scoresPtr, scoresPtr + numClasses);
-        float score = *maxClsPtr;
-        int class_id = maxClsPtr - scoresPtr;
+        auto objScorePtr = rowPtr + 4;
+        auto clsScoresPtr = rowPtr + 5;
+        auto maxClsPtr = std::max_element(clsScoresPtr, clsScoresPtr + numClasses);
+        float score = (*maxClsPtr) * (*objScorePtr);
+        int class_id = maxClsPtr - clsScoresPtr;
 
         if (score < config.probabilityThreshold)
         {

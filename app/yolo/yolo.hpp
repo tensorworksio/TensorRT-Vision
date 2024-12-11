@@ -1,13 +1,14 @@
 #pragma once
 #include <fstream>
 #include <utils/json_utils.hpp>
-#include <utils/detection_utils.hpp>
+#include <types/detection.hpp>
 #include <engine/processor.hpp>
 
 enum class YoloVersion : int
 {
     v7 = 7,
     v8 = 8,
+    v11 = 11,
     UNKNOWN = -1
 };
 
@@ -70,6 +71,7 @@ public:
 
 private:
     bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
+    virtual std::vector<Detection> postprocess(const std::vector<float> &featureVector);
 
 protected:
     const YoloConfig config;
@@ -88,14 +90,8 @@ private:
     std::vector<Detection> postprocess(const std::vector<float> &featureVector) override;
 };
 
-class Yolov8 : public Yolo
-{
-public:
-    Yolov8(const YoloConfig &t_config) : Yolo(t_config) {};
-
-private:
-    std::vector<Detection> postprocess(const std::vector<float> &featureVector) override;
-};
+using Yolov8 = Yolo;
+using Yolov11 = Yolo;
 
 class YoloFactory
 {
@@ -108,6 +104,8 @@ public:
             return std::make_unique<Yolov7>(t_config);
         case YoloVersion::v8:
             return std::make_unique<Yolov8>(t_config);
+        case YoloVersion::v11:
+            return std::make_unique<Yolov11>(t_config);
         default:
             throw std::invalid_argument(fmt::format("Unsupported YOLO version {}", static_cast<int>(t_config.version)));
         }
