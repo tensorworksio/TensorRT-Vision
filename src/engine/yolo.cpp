@@ -61,7 +61,7 @@ std::vector<Detection> Yolo::postprocess(const std::vector<float> &featureVector
         float score = *maxClsPtr;
         int class_id = maxClsPtr - scoresPtr;
 
-        if (score < config.probabilityThreshold)
+        if (score < config.confidenceThreshold)
         {
             continue;
         }
@@ -83,7 +83,7 @@ std::vector<Detection> Yolo::postprocess(const std::vector<float> &featureVector
 
     // Non Maximum Suppression
     std::vector<int> indices;
-    cv::dnn::NMSBoxes(bboxes, scores, config.probabilityThreshold, config.nmsThreshold, indices, config.nmsEta, config.topK);
+    cv::dnn::NMSBoxes(bboxes, scores, config.confidenceThreshold, config.nmsThreshold, indices, config.nmsEta, config.topK);
 
     // Fill output detections
     std::vector<Detection> detections;
@@ -131,7 +131,7 @@ std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVect
         float score = (*maxClsPtr) * (*objScorePtr);
         int class_id = maxClsPtr - clsScoresPtr;
 
-        if (score < config.probabilityThreshold)
+        if (score < config.confidenceThreshold)
         {
             continue;
         }
@@ -153,7 +153,7 @@ std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVect
 
     // Non Maximum Suppression
     std::vector<int> indices;
-    cv::dnn::NMSBoxes(bboxes, scores, config.probabilityThreshold, config.nmsThreshold, indices, config.nmsEta, config.topK);
+    cv::dnn::NMSBoxes(bboxes, scores, config.confidenceThreshold, config.nmsThreshold, indices, config.nmsEta, config.topK);
 
     // Fill output detections
     std::vector<Detection> detections;

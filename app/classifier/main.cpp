@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
         if (outFile.is_open())
         {
             outFile << "Category: " << det.class_name << std::endl;
-            outFile << "Confidence: " << det.probability << std::endl;
+            outFile << "Confidence: " << det.confidence << std::endl;
             outFile.close();
         }
         else
@@ -68,14 +68,14 @@ int main(int argc, char *argv[])
     {
         // Write to stdout if no output file specified
         std::cout << "Category: " << det.class_name << std::endl;
-        std::cout << "Confidence: " << det.probability << std::endl;
+        std::cout << "Confidence: " << det.confidence << std::endl;
     }
 
     // Display image if requested
     if (display)
     {
         cv::putText(image,
-                    det.class_name + " (" + std::to_string(det.probability) + ")",
+                    det.class_name + " (" + std::to_string(det.confidence) + ")",
                     cv::Point(20, 40),
                     cv::FONT_HERSHEY_SIMPLEX,
                     1.0,

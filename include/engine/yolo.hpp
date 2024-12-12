@@ -18,8 +18,8 @@ struct YoloConfig : JsonConfig
     trt::EngineConfig engine{};
     // Yolo version
     YoloVersion version = YoloVersion::UNKNOWN;
-    // Probability threshold used to filter detected objects
-    float probabilityThreshold = 0.25f;
+    // confidence threshold used to filter detected objects
+    float confidenceThreshold = 0.25f;
     // Non-maximum suppression threshold
     float nmsThreshold = 0.45f;
     // Adaptive threshold coefficient NMS
@@ -35,8 +35,8 @@ struct YoloConfig : JsonConfig
             engine.loadFromJson(data["engine"]);
         if (data.contains("version"))
             version = static_cast<YoloVersion>(data["version"].get<int>());
-        if (data.contains("probability_threshold"))
-            probabilityThreshold = data["probability_threshold"].get<float>();
+        if (data.contains("confidence_threshold"))
+            confidenceThreshold = data["confidence_threshold"].get<float>();
         if (data.contains("nms_threshold"))
             nmsThreshold = data["nms_threshold"].get<float>();
         if (data.contains("nms_eta"))

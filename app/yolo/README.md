@@ -27,7 +27,7 @@ Create `config.json`:
 {
   "yolo": {
     "version": 11,
-    "probability_threshold": 0.25,
+    "confidence_threshold": 0.25,
     "nms_threshold": 0.45,
     "class_names": ["class1", "class2"],
 

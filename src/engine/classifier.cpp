@@ -31,7 +31,7 @@ Detection Classifier::postprocess(const std::vector<float> &featureVector)
     if (*maxElement >= config.confidenceThreshold)
     {
         det.class_id = std::distance(featureVector.begin(), maxElement);
-        det.probability = *maxElement;
+        det.confidence = *maxElement;
         det.class_name = getClassName(det.class_id);
     }
     return det;
