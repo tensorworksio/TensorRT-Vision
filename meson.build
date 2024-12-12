@@ -28,7 +28,9 @@ engine_src = files(
   'src/engine/engine.cpp',
   'src/engine/classifier.cpp',
   'src/engine/reid.cpp',
-  'src/engine/yolo.cpp'
+  'src/engine/yolo.cpp',
+  'src/kalman/xysr.cpp',
+  'src/kalman/xywh.cpp'
 )
 
 # Include 
