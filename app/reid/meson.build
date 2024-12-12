@@ -1,5 +1,4 @@
 reid_src = files(
-    'reid.cpp',
     'main.cpp'
 )
 

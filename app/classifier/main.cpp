@@ -3,7 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
 #include <types/detection.hpp>
-#include "classifier.hpp"
+#include <engine/classifier.hpp>
 
 namespace po = boost::program_options;
 

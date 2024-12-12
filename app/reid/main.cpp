@@ -3,7 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
 #include <utils/detection_utils.hpp>
-#include "reid.hpp"
+#include <engine/reid.hpp>
 
 namespace po = boost::program_options;
 
@@ -22,6 +22,8 @@ int main(int argc, char *argv[])
     }
 
     po::notify(vm);
+
+    bool display = vm["display"].as<bool>();
 
     // Load query image
     std::string queryPath = vm["query"].as<std::string>();
@@ -55,7 +57,8 @@ int main(int argc, char *argv[])
     auto featureVector2 = reid.process(keyImage);
 
     // Compute cosine similarity
-    double similarity = cosineSimilarity(featureVector1, featureVector2);
+    float similarity = cosineSimilarity(featureVector1, featureVector2);
+    bool match = similarity > reid.getConfig().confidenceThreshold;
 
     // Output results
     if (vm.count("output"))
@@ -65,6 +68,7 @@ int main(int argc, char *argv[])
         if (outFile.is_open())
         {
             outFile << "Cosine Similarity: " << similarity << std::endl;
+            outFile << "Match: " << match << std::endl;
             outFile.close();
         }
         else
@@ -76,10 +80,10 @@ int main(int argc, char *argv[])
     else
     {
         std::cout << "Cosine Similarity: " << similarity << std::endl;
+        std::cout << "Match: " << match << std::endl;
     }
 
-    // Display images if requested
-    if (vm["display"].as<bool>())
+    if (display)
     {
         int maxHeight = std::max(queryImage.rows, keyImage.rows);
         int totalWidth = queryImage.cols + keyImage.cols;

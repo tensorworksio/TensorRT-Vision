@@ -25,7 +25,10 @@ zmq_dep = dependency('libzmq')
 
 # Source files
 engine_src = files(
-  'src/engine.cpp'
+  'src/engine/engine.cpp',
+  'src/engine/classifier.cpp',
+  'src/engine/reid.cpp',
+  'src/engine/yolo.cpp'
 )
 
 # Include 

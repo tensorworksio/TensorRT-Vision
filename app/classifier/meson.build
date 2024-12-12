@@ -1,5 +1,4 @@
 classifier_src = files(
-    'classifier.cpp',
     'main.cpp'
 )
 

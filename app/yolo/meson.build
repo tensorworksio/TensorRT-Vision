@@ -1,5 +1,4 @@
 yolo_src = files(
-    'yolo.cpp',
     'main.cpp'
 )
 
