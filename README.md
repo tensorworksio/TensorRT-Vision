@@ -29,7 +29,7 @@ Follow installation instructions [here](https://gist.github.com/denguir/b21aa66a
 meson setup build -Dbuild_apps=yolo,reid,classifier
 meson compile -C build
 
-# Or build specific app
+# Or build a specific app
 meson setup build -Dbuild_apps=yolo
 meson compile -C build
 
@@ -43,5 +43,3 @@ Each app has its own README with detailed instructions:
 - [Classification Guide](app/classifier/README.md)
 - [Re-Identification Guide](app/reid/README.md)
 - [YOLO Detection Guide](app/yolo/README.md)
-
-## ⚖️ License

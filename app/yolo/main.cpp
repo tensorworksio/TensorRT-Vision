@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
         for (const auto &det : detections)
         {
             cv::rectangle(frame, det.bbox, cv::Scalar(0, 255, 0), 2);
-            cv::putText(frame, std::to_string(det.class_id),
+            cv::putText(frame, det.class_name,
                         cv::Point(det.bbox.x, det.bbox.y - 5),
                         cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
         }

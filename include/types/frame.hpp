@@ -9,13 +9,13 @@ using Timestamp = std::chrono::system_clock::time_point;
 
 struct Frame
 {
-    static uint64_t id;
-    Timestamp timestamp;
-    std::string source;
-
     cv::Mat image;
+    std::string source;
+    Timestamp timestamp;
+
+    static uint64_t id;
     nlohmann::json metadata;
-    std::vector<Detection> detections;
+    std::vector<std::unique_ptr<Detection>> detections;
 
     static uint64_t getNextId() { return ++id; };
 
@@ -26,5 +26,5 @@ struct Frame
     };
 };
 
-uint64_t Frame::id = 0;
+inline uint64_t Frame::id = 0;
 using FramePtr = std::unique_ptr<Frame>;

@@ -13,15 +13,16 @@ torch.onnx.export(model, ...)
 
 2. Convert ONNX to TensorRT engine:
 ```shell
-trtexec --onnx=model.onnx --saveEngine=model.engine --fp16
+mkdir data
+trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16
 ```
 
-### Configure
-Create `config.json`:
+## Configure
+In `data` folder, add your `config.json`:
 ```json
 {
   "engine": {
-    "model_path": "path/to/model.engine",
+    "model_path": "./data/model.engine",
     "batch_size": 1,
     "precision": 16
   },
@@ -30,8 +31,16 @@ Create `config.json`:
 }
 ```
 
-### Run
+## Compile
 ```shell
+# in root directory
+meson setup build -Dbuild_apps=classifier
+meson compile -C build
+```
+
+## Run
+```shell
+# in root directory
 cd build/app/classifier
-./classifier -i image.jpg -c config.json -d
+./classifier -i image.jpg -c data/config.json -d
 ```

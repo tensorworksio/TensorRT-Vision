@@ -21,7 +21,7 @@ tensorrt_dep = declare_dependency(
   link_args : ['-L' + tensorrt_lib_dir, '-lnvinfer', '-lnvinfer_plugin', '-lcudart']
 )
 
-zmq_dep = dependency('libzmq')
+dlib_dep = dependency('dlib-1', method : 'pkg-config')
 
 # Source files
 engine_src = files(
@@ -29,8 +29,13 @@ engine_src = files(
   'src/engine/classifier.cpp',
   'src/engine/reid.cpp',
   'src/engine/yolo.cpp',
-  'src/kalman/xysr.cpp',
-  'src/kalman/xywh.cpp'
+
+  'src/tracking/tracker.cpp',
+  'src/tracking/sort.cpp',
+  'src/tracking/botsort.cpp',
+
+  'src/tracking/kalman/xysr.cpp',
+  'src/tracking/kalman/xywh.cpp'
 )
 
 # Include 
@@ -41,7 +46,7 @@ engine_lib = shared_library(
   'engine', 
   sources : engine_src,
   include_directories : engine_inc,
-  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, zmq_dep],
+  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, dlib_dep],
   install : true
 )
 
@@ -49,7 +54,7 @@ engine_lib = shared_library(
 engine_dep = declare_dependency(
   link_with : engine_lib,
   include_directories : engine_inc,
-  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, zmq_dep]
+  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, dlib_dep]
 )
 
 # Make engine_dep available to parent projects

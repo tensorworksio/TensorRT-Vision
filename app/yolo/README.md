@@ -13,35 +13,127 @@ YOLO object detection using TensorRT for optimized inference.
 ```shell
 python3 -m venv venv
 ./venv/bin/pip3 install ultralytics onnx onnxsim
-./venv/bin/yolo export --model=yolo11n.pt --format=onnx --opset=12
+```
+
+```shell
+mkdir data
+./venv/bin/yolo export --model=data/yolo11n.pt --format=onnx --opset=12
 ```
 
 2. Convert to TensorRT engine:
 ```shell
-trtexec --onnx=yolo11n.onnx --saveEngine=yolo11n.engine --fp16
+trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16
 ```
 
 ## Configure
-Create `config.json`:
+In `data` folder, add your `config.json`:
 ```json
 {
   "yolo": {
     "version": 11,
     "confidence_threshold": 0.25,
     "nms_threshold": 0.45,
-    "class_names": ["class1", "class2"],
 
     "engine": {
-      "model_path": "path/to/yolo.engine",
-      "batch_size": 1,
-      "precision": 16
-    }
+    "model_path": "./data/yolo11n.engine",
+    "batch_size": 1,
+    "precision": 16
+    },
+
+    "class_names": ["person",
+                    "bicycle",
+                    "car",
+                    "motorbike",
+                    "aeroplane",
+                    "bus",
+                    "train",
+                    "truck",
+                    "boat",
+                    "traffic light",
+                    "fire hydrant",
+                    "stop sign",
+                    "parking meter",
+                    "bench",
+                    "bird",
+                    "cat",
+                    "dog",
+                    "horse",
+                    "sheep",
+                    "cow",
+                    "elephant",
+                    "bear",
+                    "zebra",
+                    "giraffe",
+                    "backpack",
+                    "umbrella",
+                    "handbag",
+                    "tie",
+                    "suitcase",
+                    "frisbee",
+                    "skis",
+                    "snowboard",
+                    "sports ball",
+                    "kite",
+                    "baseball bat",
+                    "baseball glove",
+                    "skateboard",
+                    "surfboard",
+                    "tennis racket",
+                    "bottle",
+                    "wine glass",
+                    "cup",
+                    "fork",
+                    "knife",
+                    "spoon",
+                    "bowl",
+                    "banana",
+                    "apple",
+                    "sandwich",
+                    "orange",
+                    "broccoli",
+                    "carrot",
+                    "hot dog",
+                    "pizza",
+                    "donut",
+                    "cake",
+                    "chair",
+                    "sofa",
+                    "pottedplant",
+                    "bed",
+                    "diningtable",
+                    "toilet",
+                    "tvmonitor",
+                    "laptop",
+                    "mouse",
+                    "remote",
+                    "keyboard",
+                    "cell phone",
+                    "microwave",
+                    "oven",
+                    "toaster",
+                    "sink",
+                    "refrigerator",
+                    "book",
+                    "clock",
+                    "vase",
+                    "scissors",
+                    "teddy bear",
+                    "hair drier",
+                    "toothbrush"]
   }
 }
 ```
 
+## Compile
+```shell
+# in root directory
+meson setup build -Dbuild_apps=yolo
+meson compile -C build
+```
+
 ## Run
 ```shell
+# in root directory
 cd build/app/yolo
-.yolo -i 0 -o webcam.mp4 -c config.json -d
+./yolo -i 0 -o data/webcam.mp4 -c data/config.json -d
 ```

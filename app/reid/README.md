@@ -5,24 +5,28 @@ Feature extraction for object re-identification using TensorRT.
 
 ## Export Model
 1. Export TorchReID model to ONNX:
-```bash
+```shell
 python3 -m venv venv
 ./venv/bin/pip3 install -r requirement.txt
-./venv/bin/python3 torchreid-cli.py -m osnet_x0_25 -e -o model.onnx -s 256 128
+```
+
+```shell
+mkdir data
+./venv/bin/python3 torchreid-cli.py -m osnet_x0_25 -e -o data/osnet_x0_25.onnx -s 256 128
 ```
 
 2. Convert to TensorRT engine:
 ```shell
-trtexec --onnx=model.onnx --saveEngine=model.engine --fp16
+trtexec --onnx=data/osnet_x0_25.onnx --saveEngine=data/osnet_x0_25.engine --fp16
 ```
 
 ## Configure
-Create `config.json`:
+In `data` folder, add your `config.json`:
 ```json
 {
   "reid": {
     "engine": {
-      "model_path": "path/to/model.engine",
+      "model_path": "./data/osnet_x0_25.engine",
       "batch_size": 1,
       "precision": 16
     },
@@ -31,8 +35,15 @@ Create `config.json`:
 }
 ```
 
+## Compile
+```shell
+# in root directory
+meson setup build -Dbuild_apps=reid
+meson compile -C build
+```
 ## Run
 ```shell
+# in root directory
 cd build/app/reid
-./reid -q image1.jpg -k image2.jpg -c config.json -d
+./reid -q image1.jpg -k image2.jpg -c data/config.json -d
 ```
