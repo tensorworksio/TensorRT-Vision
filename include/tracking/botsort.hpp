@@ -58,16 +58,6 @@ struct BotSortConfig : public JsonConfig
         if (data.contains("appearance_thresh"))
             appearance_thresh = data["appearance_thresh"].get<float>();
     }
-
-    static BotSortConfig load(const std::string &filename)
-    {
-        std::ifstream file(filename);
-        auto data = nlohmann::json::parse(file);
-
-        BotSortConfig config;
-        config.loadFromJson(data["botsort"]);
-        return config;
-    }
 };
 
 class BotSort : public BaseTracker
@@ -75,7 +65,7 @@ class BotSort : public BaseTracker
 public:
     BotSort(const BotSortConfig &t_config) : config(t_config) {}
     const BotSortConfig &getConfig() const { return config; };
-    void process(Frame &frame) override;
+    void update(std::vector<Detection> &detections) override;
 
 private:
     const BotSortConfig config;

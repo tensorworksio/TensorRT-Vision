@@ -56,7 +56,8 @@ class BaseTracker
 public:
     BaseTracker() = default;
     virtual ~BaseTracker() = default;
-    virtual void process(Frame &frame) = 0;
+    virtual void update(std::vector<Detection> &detections) = 0;
+    const std::vector<std::unique_ptr<BaseTrack>> &getTracks() const { return tracks; }
 
 protected:
     std::vector<std::unique_ptr<BaseTrack>> tracks{};

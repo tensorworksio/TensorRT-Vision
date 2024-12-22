@@ -1,5 +1,8 @@
 #pragma once
 
+#include <fstream>
+#include <nlohmann/json.hpp>
+
 #include "tracker.hpp"
 #include "sort.hpp"
 #include "botsort.hpp"
@@ -30,7 +33,7 @@ inline auto &getTrackers()
     return trackers;
 }
 
-inline TrackerType getTrackerType(std::string name)
+inline TrackerType getTrackerType(const std::string &name)
 {
     for (const auto &tracker_type : getTrackers())
     {
@@ -45,18 +48,24 @@ inline TrackerType getTrackerType(std::string name)
 class TrackerFactory
 {
 public:
-    static std::unique_ptr<BaseTracker> create(TrackerType tracker, const std::string &config_file)
+    static std::unique_ptr<BaseTracker> create(const std::string &config_file)
     {
-        switch (tracker)
+        std::ifstream file(config_file);
+        auto data = nlohmann::json::parse(file);
+        TrackerType tracker_type = getTrackerType(data["tracker"]["name"]);
+
+        switch (tracker_type)
         {
-        case (TrackerType::SORT):
+        case TrackerType::SORT:
         {
-            auto config = isFileAccessible(config_file) ? SortConfig::load(config_file) : SortConfig();
+            auto config = SortConfig();
+            config.loadFromJson(data["tracker"]);
             return std::make_unique<Sort>(config);
         }
-        case (TrackerType::BOTSORT):
+        case TrackerType::BOTSORT:
         {
-            auto config = isFileAccessible(config_file) ? BotSortConfig::load(config_file) : BotSortConfig();
+            auto config = BotSortConfig();
+            config.loadFromJson(data["tracker"]);
             return std::make_unique<BotSort>(config);
         }
         default:
