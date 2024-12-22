@@ -43,3 +43,13 @@ Each app has its own README with detailed instructions:
 - [Classification Guide](app/classifier/README.md)
 - [Re-Identification Guide](app/reid/README.md)
 - [YOLO Detection Guide](app/yolo/README.md)
+
+## TODO
+- Adapt YOLO app config loading to look like tracker factory,
+    - Define DetectorFactory
+    - Drop version in YOLO and treat them as different model
+    - Create an enum of detector
+
+- MOT src code to be loaded from mot.cpp -> separate of concerns
+    - This repo is more focused on the AI inference
+    - the mot app is still relevant as it combine tracker / detector
