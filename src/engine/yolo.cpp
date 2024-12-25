@@ -2,15 +2,6 @@
 #include <opencv2/dnn.hpp>
 #include <utils/detection_utils.hpp>
 
-const std::string Yolo::getClassName(int class_id) const
-{
-    if (config.classNames.empty())
-    {
-        return std::to_string(class_id);
-    }
-    return config.classNames[class_id];
-}
-
 bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
 {
     // These params will be used in the post-processing stage

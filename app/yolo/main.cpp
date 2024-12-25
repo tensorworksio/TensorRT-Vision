@@ -5,7 +5,7 @@
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
 #include <types/detection.hpp>
-#include <engine/yolo.hpp>
+#include <engine/factory.hpp>
 
 namespace po = boost::program_options;
 
@@ -52,16 +52,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Config
-    YoloConfig config;
-    if (vm.count("config"))
-    {
-        std::string configPath = vm["config"].as<std::string>();
-        config = YoloConfig::load(configPath);
-    }
-
     // Load model
-    auto detector = YoloFactory::create(config);
+    std::string configPath = vm["config"].as<std::string>();
+    auto detector = DetectorFactory::create(configPath);
 
     // Output setup
     cv::VideoWriter writer;

@@ -53,3 +53,6 @@ Each app has its own README with detailed instructions:
 - MOT src code to be loaded from mot.cpp -> separate of concerns
     - This repo is more focused on the AI inference
     - the mot app is still relevant as it combine tracker / detector
+
+- OCR app
+- Repo for shared data structures ?
