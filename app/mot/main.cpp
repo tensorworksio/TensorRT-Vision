@@ -1,12 +1,12 @@
 #include <string>
 #include <signal.h>
 #include <atomic>
+#include <boost/program_options.hpp>
 
 #include <opencv2/opencv.hpp>
-#include <boost/program_options.hpp>
-#include <types/detection.hpp>
-#include <engine/yolo.hpp>
-#include <engine/reid.hpp>
+#include <models/reid/reid.hpp>
+#include <models/detection/factory.hpp>
+
 #include <tracking/factory.hpp>
 
 namespace po = boost::program_options;
@@ -53,14 +53,12 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Load configurations
+    // Load models
     std::string configPath = vm["config"].as<std::string>();
     auto tracker = TrackerFactory::create(configPath);
+    auto detector = DetectorFactory::create(configPath);
 
-    auto yoloConfig = YoloConfig::load(configPath);
-    auto detector = YoloFactory::create(yoloConfig);
-
-    auto reidConfig = ReIdConfig::load(configPath);
+    auto reidConfig = ReIdConfig::load(configPath, "reid");
     auto reid = std::make_unique<ReId>(reidConfig);
 
     // Output setup
@@ -82,7 +80,7 @@ int main(int argc, char *argv[])
 
     if (display)
     {
-        cv::namedWindow("Multi-Object Tracking", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Multi Object Tracking", cv::WINDOW_AUTOSIZE);
     }
 
     cv::Mat frame;
@@ -110,7 +108,6 @@ int main(int argc, char *argv[])
         // Visualize results
         for (const auto &det : detections)
         {
-            // Draw bounding box with track ID
             cv::rectangle(frame, det.bbox, det.getColor(), 2);
             std::string label = det.class_name + " ID:" + std::to_string(det.id);
             cv::putText(frame, label,
@@ -120,7 +117,7 @@ int main(int argc, char *argv[])
 
         if (display)
         {
-            cv::imshow("Multi-Object Tracking", frame);
+            cv::imshow("Multi Object Tracking", frame);
         }
 
         if (writer.isOpened())
@@ -137,8 +134,10 @@ int main(int argc, char *argv[])
     // Cleanup
     if (cap.isOpened())
         cap.release();
+
     if (writer.isOpened())
         writer.release();
+
     if (display)
         cv::destroyAllWindows();
 

@@ -3,7 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
 #include <utils/detection_utils.hpp>
-#include <engine/reid.hpp>
+#include <models/reid/reid.hpp>
 
 namespace po = boost::program_options;
 

@@ -26,9 +26,9 @@ dlib_dep = dependency('dlib-1', method : 'pkg-config')
 # Source files
 engine_src = files(
   'src/engine/engine.cpp',
-  'src/engine/classifier.cpp',
-  'src/engine/reid.cpp',
-  'src/engine/yolo.cpp',
+  'src/models/classification/classifier.cpp',
+  'src/models/detection/yolo.cpp',
+  'src/models/reid/reid.cpp',
 
   'src/tracking/tracker.cpp',
   'src/tracking/sort.cpp',

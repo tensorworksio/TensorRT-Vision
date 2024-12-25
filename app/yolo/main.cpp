@@ -4,8 +4,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
-#include <types/detection.hpp>
-#include <engine/factory.hpp>
+#include <models/detection/factory.hpp>
 
 namespace po = boost::program_options;
 
@@ -87,6 +86,7 @@ int main(int argc, char *argv[])
         if (frame.empty())
             break;
 
+        // Detect objects
         auto detections = detector->process(frame);
 
         // Draw detections

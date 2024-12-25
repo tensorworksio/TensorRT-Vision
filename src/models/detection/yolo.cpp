@@ -1,6 +1,6 @@
-#include <engine/yolo.hpp>
 #include <opencv2/dnn.hpp>
 #include <utils/detection_utils.hpp>
+#include <models/detection/yolo.hpp>
 
 bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
 {

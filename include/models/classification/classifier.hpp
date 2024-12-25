@@ -1,8 +1,8 @@
 #pragma once
 
 #include <fstream>
-#include <utils/json_utils.hpp>
 #include <types/detection.hpp>
+#include <utils/json_utils.hpp>
 #include <engine/processor.hpp>
 
 struct ClassifierConfig : JsonConfig
@@ -21,12 +21,25 @@ struct ClassifierConfig : JsonConfig
             classNames = data["class_names"].get<std::vector<std::string>>();
     }
 
-    static ClassifierConfig load(const std::string &filename)
+    static ClassifierConfig load(const std::string &filename, const std::string &task = "")
     {
         std::ifstream file(filename);
         auto data = nlohmann::json::parse(file);
+
         ClassifierConfig config;
-        config.loadFromJson(data);
+        if (task.empty())
+        {
+            config.loadFromJson(data);
+        }
+        else if (data.contains(task))
+        {
+            config.loadFromJson(data[task]);
+        }
+        else
+        {
+            throw std::runtime_error("Config file does not contain task: " + task);
+        }
+
         return config;
     }
 
@@ -37,8 +50,11 @@ class Classifier : public trt::ModelProcessor<Detection>
 {
 public:
     Classifier(const ClassifierConfig &t_config) : ModelProcessor(t_config.engine), config(t_config) {}
-    const std::string getClassName(int class_id) const;
     const ClassifierConfig &getConfig() const { return config; };
+    const std::string getClassName(int class_id) const
+    {
+        return (static_cast<size_t>(class_id) < config.classNames.size()) ? config.classNames[class_id] : std::to_string(class_id);
+    };
 
 protected:
     bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;

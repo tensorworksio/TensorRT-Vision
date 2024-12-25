@@ -18,13 +18,25 @@ struct ReIdConfig : public JsonConfig
             confidenceThreshold = data["confidence_threshold"].get<float>();
     }
 
-    static ReIdConfig load(const std::string &filename)
+    static ReIdConfig load(const std::string &filename, const std::string &task = "")
     {
         std::ifstream file(filename);
         auto data = nlohmann::json::parse(file);
 
         ReIdConfig config;
-        config.loadFromJson(data["reid"]);
+        if (task.empty())
+        {
+            config.loadFromJson(data);
+        }
+        else if (data.contains(task))
+        {
+            config.loadFromJson(data[task]);
+        }
+        else
+        {
+            throw std::runtime_error("Config file does not contain task: " + task);
+        }
+
         return config;
     }
 };

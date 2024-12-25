@@ -1,14 +1,5 @@
-#include <engine/classifier.hpp>
 #include <utils/detection_utils.hpp>
-
-const std::string Classifier::getClassName(int class_id) const
-{
-    if (config.classNames.empty())
-    {
-        return std::to_string(class_id);
-    }
-    return config.classNames[class_id];
-}
+#include <models/classification/classifier.hpp>
 
 bool Classifier::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
 {
