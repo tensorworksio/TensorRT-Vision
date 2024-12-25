@@ -24,14 +24,12 @@ trtexec --onnx=data/osnet_x0_25.onnx --saveEngine=data/osnet_x0_25.engine --fp16
 In `data` folder, add your `config.json`:
 ```json
 {
-  "reid": {
-    "engine": {
-      "model_path": "./data/osnet_x0_25.engine",
-      "batch_size": 1,
-      "precision": 16
-    },
-    "confidence_threshold": 0.5
-  }
+  "engine": {
+    "model_path": "./data/osnet_x0_25.engine",
+    "batch_size": 1,
+    "precision": 16
+  },
+  "confidence_threshold": 0.5
 }
 ```
 

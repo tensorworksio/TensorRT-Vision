@@ -40,13 +40,17 @@ inline auto &getDetectors()
 
 inline DetectorType getDetectorType(const std::string &name)
 {
+    std::string lower_name = name;
+    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+
     for (const auto &type : getDetectors())
     {
-        if (name == getDetectorName(type))
+        if (lower_name == getDetectorName(type))
         {
             return type;
         }
     }
+    return DetectorType::UNKNOWN;
     return DetectorType::UNKNOWN;
 };
 
