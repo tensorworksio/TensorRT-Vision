@@ -1,0 +1,7 @@
+[wrap-git]
+directory = mot.cpp
+url = https://github.com/tensorworksio/mot.cpp.git 
+revision = main
+
+[provide]
+mot.cpp = mot_dep

@@ -2,6 +2,10 @@ project('TensorRT-Vision', 'cpp',
         version : '0.2',
         default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'optimization=0'])
 
+# Get vision-core dependency
+vision_core_proj = subproject('vision-core')
+vision_core_dep = vision_core_proj.get_variable('vision_core_dep')
+
 # Dependencies
 cuda_dep = dependency('cuda')
 spdlog_dep = dependency('spdlog')
@@ -46,7 +50,7 @@ engine_lib = shared_library(
   'engine', 
   sources : engine_src,
   include_directories : engine_inc,
-  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, dlib_dep],
+  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, dlib_dep, vision_core_dep],
   install : true
 )
 
@@ -54,7 +58,7 @@ engine_lib = shared_library(
 engine_dep = declare_dependency(
   link_with : engine_lib,
   include_directories : engine_inc,
-  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, dlib_dep]
+  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, dlib_dep, vision_core_dep]
 )
 
 # Make engine_dep available to parent projects

@@ -1,6 +1,6 @@
 #include <tracking/sort.hpp>
 #include <tracking/kalman/xywh.hpp>
-#include <utils/metrics_utils.hpp>
+#include <utils/geometry_utils.hpp>
 #include <dlib/optimization/max_cost_assignment.h>
 
 SortTrack::SortTrack(const cv::Rect2f &rect, const KalmanConfig &config) : BaseTrack(std::make_shared<KalmanFilterXYWH>(rect, config)) {}

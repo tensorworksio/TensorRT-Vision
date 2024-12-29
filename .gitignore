@@ -12,3 +12,6 @@ builddir
 data
 venv
 runs
+
+subprojects/*
+!subprojects/*.wrap
