@@ -1,5 +1,5 @@
 # Add mot.cpp as subproject
-mot_proj = subproject('mot.cpp', required: false)
+mot_proj = subproject('mot.cpp', required: true)
 if not mot_proj.found()
     error('mot.cpp subproject not found. Please make sure it exists in subprojects directory.')
 endif

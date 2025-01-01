@@ -1,6 +1,11 @@
 project('TensorRT-Vision', 'cpp',
         version : '0.2',
-        default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'optimization=0'])
+        default_options : [
+          'cpp_std=c++17',
+          'warning_level=3',
+          'werror=true'
+        ]
+)
 
 # Get vision-core dependency
 vision_core_proj = subproject('vision-core')
@@ -33,13 +38,6 @@ engine_src = files(
   'src/models/classification/classifier.cpp',
   'src/models/detection/yolo.cpp',
   'src/models/reid/reid.cpp',
-
-  'src/tracking/tracker.cpp',
-  'src/tracking/sort.cpp',
-  'src/tracking/botsort.cpp',
-
-  'src/tracking/kalman/xysr.cpp',
-  'src/tracking/kalman/xywh.cpp'
 )
 
 # Include 
