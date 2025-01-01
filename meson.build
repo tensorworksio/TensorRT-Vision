@@ -30,33 +30,33 @@ tensorrt_dep = declare_dependency(
   link_args : ['-L' + tensorrt_lib_dir, '-lnvinfer', '-lnvinfer_plugin', '-lcudart']
 )
 
-dlib_dep = dependency('dlib-1', method : 'pkg-config')
+dependencies = [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, vision_core_dep]
 
 # Source files
-engine_src = files(
+src_files = files(
   'src/engine/engine.cpp',
   'src/models/classification/classifier.cpp',
   'src/models/detection/yolo.cpp',
   'src/models/reid/reid.cpp',
 )
 
-# Include 
-engine_inc = [include_directories('include'),  tensorrt_include_dir]
+# Include
+inc_dir = [include_directories('include'),  tensorrt_include_dir]
 
 # Build shared library
 engine_lib = shared_library(
   'engine', 
-  sources : engine_src,
-  include_directories : engine_inc,
-  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, dlib_dep, vision_core_dep],
+  sources : src_files,
+  include_directories : inc_dir,
+  dependencies : dependencies,
   install : true
 )
 
 # Declare dependencies
 engine_dep = declare_dependency(
   link_with : engine_lib,
-  include_directories : engine_inc,
-  dependencies : [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, dlib_dep, vision_core_dep]
+  include_directories : inc_dir,
+  dependencies : dependencies
 )
 
 # Make engine_dep available to parent projects

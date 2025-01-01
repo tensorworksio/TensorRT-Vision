@@ -14,7 +14,8 @@ TensorRT-Vision provides optimized inference for computer vision models using NV
 
 - Object Classification
 - Object Re-Identification  
-- Object Detection (YOLO)
+- Object Detection
+- Multi Object Tracking
 
 ## ⚙️ Requirements
 1. CUDA 12.6
@@ -43,6 +44,7 @@ Each app has its own README with detailed instructions:
 - [Classification Guide](app/classifier/README.md)
 - [Re-Identification Guide](app/reid/README.md)
 - [YOLO Detection Guide](app/yolo/README.md)
+- [Multi Object Tracking Guide](app/mot/README.md)
 
 ## TODO
 - OCR app
