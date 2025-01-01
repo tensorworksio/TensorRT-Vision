@@ -9,21 +9,23 @@ namespace po = boost::program_options;
 
 int main(int argc, char *argv[])
 {
-    po::options_description desc("Allowed options");
-    desc.add_options()("help,h", "produce help message")("input,i", po::value<std::string>()->required(), "Input image")("config,c", po::value<std::string>(), "Path to model config")("display,d", po::bool_switch(), "Display image with results")("output,o", po::value<std::string>(), "Output text file for results");
+    po::options_description options("Program options");
+    options.add_options()("help,h", "Show help message");
+    options.add_options()("input,i", po::value<std::string>()->required(), "Input image");
+    options.add_options()("config,c", po::value<std::string>(), "Path to model config.json");
+    options.add_options()("display,d", po::bool_switch(), "Display image with results");
+    options.add_options()("output,o", po::value<std::string>(), "Output text file for results");
 
     po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::store(po::parse_command_line(argc, argv, options), vm);
 
     if (vm.count("help"))
     {
-        std::cout << desc << "\n";
+        std::cout << options << "\n";
         return 1;
     }
 
     po::notify(vm);
-
-    bool display = vm["display"].as<bool>();
 
     // Input
     std::string imagePath = vm["input"].as<std::string>();
@@ -35,44 +37,44 @@ int main(int argc, char *argv[])
     }
 
     // Config
-    ClassifierConfig config;
-    if (vm.count("config"))
-    {
-        std::string configPath = vm["config"].as<std::string>();
-        config = ClassifierConfig::load(configPath);
-    }
+    std::string configPath = vm["config"].as<std::string>();
+    auto config = ClassifierConfig::load(configPath);
 
     // Process image
-    Detection det;
     Classifier classifier(config);
-    det = classifier.process(image);
+    Detection det = classifier.process(image);
 
-    // Write to output file if specified
+    // Output
+    nlohmann::json output = {
+        {"status", "success"},
+        {"data", {{"class_id", det.class_id}, {"class_name", det.class_name}, {"confidence", det.confidence}}}};
+
     if (vm.count("output"))
     {
         std::string outputPath = vm["output"].as<std::string>();
         std::ofstream outFile(outputPath);
         if (outFile.is_open())
         {
-            outFile << "Category: " << det.class_name << std::endl;
-            outFile << "Confidence: " << det.confidence << std::endl;
+            outFile << output.dump() << std::endl;
             outFile.close();
         }
         else
         {
-            std::cerr << "Error: Could not create output file " << outputPath << std::endl;
+            nlohmann::json error = {
+                {"status", "error"},
+                {"message", "Could not create output file"}};
+            std::cerr << error.dump() << std::endl;
             return 1;
         }
     }
     else
     {
         // Write to stdout if no output file specified
-        std::cout << "Category: " << det.class_name << std::endl;
-        std::cout << "Confidence: " << det.confidence << std::endl;
+        std::cout << output.dump() << std::endl;
     }
 
     // Display image if requested
-    if (display)
+    if (vm["display"].as<bool>())
     {
         cv::putText(image,
                     det.class_name + " (" + std::to_string(det.confidence) + ")",
