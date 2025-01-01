@@ -39,9 +39,19 @@ In `data` folder, add your `config.json`:
 meson setup build -Dbuild_apps=reid
 meson compile -C build
 ```
+
 ## Run
+
+### Display
 ```shell
 # in root directory
 cd build/app/reid
 ./reid -q image1.jpg -k image2.jpg -c data/config.json -d
+```
+
+### JQuery pipeline
+```shell
+# in root directory
+cd build/app/reid
+./reid -q image1.jpg -k image2.jpg -c data/config.json | jq .data.match
 ```
