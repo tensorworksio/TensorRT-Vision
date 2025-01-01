@@ -73,9 +73,6 @@ int main(int argc, char *argv[])
         reidModel = std::make_unique<ReId>(reidConfig);
     }
 
-    // Display
-    bool display = vm["display"].as<bool>() || !vm.count("output");
-
     // Output
     cv::VideoWriter writer;
     if (vm.count("output"))
@@ -93,6 +90,8 @@ int main(int argc, char *argv[])
         }
     }
 
+    // Display
+    bool display = vm["display"].as<bool>() || !vm.count("output");
     if (display)
     {
         cv::namedWindow("Multi Object Tracking", cv::WINDOW_AUTOSIZE);

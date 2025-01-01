@@ -27,6 +27,51 @@ trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16
 
 ## Configure
 In `data` folder, add your `config.json`:
+<details>
+    <summary>YOLOv7</summary>
+
+```json
+{
+  "detector": {
+    "name": "yolov7",
+    "confidence_threshold": 0.25,
+    "nms_threshold": 0.45,
+    "engine": {
+      "model_path": "./data/yolov7n.engine",
+      "batch_size": 1,
+      "precision": 16
+    },
+    "class_names": [
+      // fill in the class names
+    ]
+  }
+}
+```
+</details>
+<details>
+    <summary>YOLOv8</summary>
+
+```json
+{
+  "detector": {
+    "name": "yolov8",
+    "confidence_threshold": 0.25,
+    "nms_threshold": 0.45,
+    "engine": {
+      "model_path": "./data/yolov8n.engine",
+      "batch_size": 1,
+      "precision": 16
+    },
+    "class_names": [
+      // fill in the class names
+    ]
+  }
+}
+```
+</details>
+<details open>
+    <summary>YOLOv11</summary>
+
 ```json
 {
   "detector": {
@@ -39,90 +84,12 @@ In `data` folder, add your `config.json`:
       "precision": 16
     },
     "class_names": [
-      "person",
-      "bicycle",
-      "car",
-      "motorbike",
-      "aeroplane",
-      "bus",
-      "train",
-      "truck",
-      "boat",
-      "traffic light",
-      "fire hydrant",
-      "stop sign",
-      "parking meter",
-      "bench",
-      "bird",
-      "cat",
-      "dog",
-      "horse",
-      "sheep",
-      "cow",
-      "elephant",
-      "bear",
-      "zebra",
-      "giraffe",
-      "backpack",
-      "umbrella",
-      "handbag",
-      "tie",
-      "suitcase",
-      "frisbee",
-      "skis",
-      "snowboard",
-      "sports ball",
-      "kite",
-      "baseball bat",
-      "baseball glove",
-      "skateboard",
-      "surfboard",
-      "tennis racket",
-      "bottle",
-      "wine glass",
-      "cup",
-      "fork",
-      "knife",
-      "spoon",
-      "bowl",
-      "banana",
-      "apple",
-      "sandwich",
-      "orange",
-      "broccoli",
-      "carrot",
-      "hot dog",
-      "pizza",
-      "donut",
-      "cake",
-      "chair",
-      "sofa",
-      "pottedplant",
-      "bed",
-      "diningtable",
-      "toilet",
-      "tvmonitor",
-      "laptop",
-      "mouse",
-      "remote",
-      "keyboard",
-      "cell phone",
-      "microwave",
-      "oven",
-      "toaster",
-      "sink",
-      "refrigerator",
-      "book",
-      "clock",
-      "vase",
-      "scissors",
-      "teddy bear",
-      "hair drier",
-      "toothbrush"
+      // fill in the class names
     ]
   }
 }
 ```
+</details>
 
 ## Compile
 ```shell
