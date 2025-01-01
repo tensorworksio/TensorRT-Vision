@@ -1,7 +1,7 @@
 # Multiple Object Tracking
 
 ## Overview
-Multiple Object Tracking (MOT) using TensorRT for optimized inference. Supports SORT and BoTSORT trackers with optional ReID feature integration.
+Multiple Object Tracking (MOT) using TensorRT for optimized inference. Supports SORT and BoTSORT trackers with optional ReID feature integration. The trackers are defined in the subproject [mot.cpp](https://github.com/tensorworksio/mot.cpp)
 
 ## Supported Trackers
 - [SORT](https://github.com/abewley/sort) ![Support](https://img.shields.io/badge/support-yes-brightgreen.svg)
