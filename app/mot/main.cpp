@@ -20,23 +20,26 @@ void signalHandler([[maybe_unused]] int signum)
 
 int main(int argc, char *argv[])
 {
-    po::options_description desc("Allowed options");
-    desc.add_options()("help,h", "produce help message")("input,i", po::value<std::string>()->required(), "Input video file or camera index (0,1,...)")("config,c", po::value<std::string>(), "Path to model config")("output,o", po::value<std::string>(), "Output video file (optional)")("display,d", po::bool_switch(), "Display video frames");
+    po::options_description options("Program options");
+    options.add_options()("help,h", "Show help message");
+    options.add_options()("input,i", po::value<std::string>()->required(), "Input video file or camera index (0,1,...)");
+    options.add_options()("config,c", po::value<std::string>(), "Path to model config.json");
+    options.add_options()("reid", po::bool_switch(), "Activate ReId");
+    options.add_options()("output,o", po::value<std::string>(), "Output video file");
+    options.add_options()("display,d", po::bool_switch(), "Display video frames");
 
     po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::store(po::parse_command_line(argc, argv, options), vm);
 
     if (vm.count("help"))
     {
-        std::cout << desc << "\n";
+        std::cout << options << "\n";
         return 1;
     }
 
     po::notify(vm);
 
-    bool display = vm["display"].as<bool>() || !vm.count("output");
-
-    // Input setup
+    // Input
     std::string inputPath = vm["input"].as<std::string>();
     cv::VideoCapture cap;
     if (inputPath.size() == 1 && std::isdigit(inputPath[0]))
@@ -53,15 +56,27 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Load models
+    // Load tracker & detector
     std::string configPath = vm["config"].as<std::string>();
     auto tracker = TrackerFactory::create(configPath);
     auto detector = DetectorFactory::create(configPath);
+    std::unique_ptr<ReId> reidModel = nullptr;
 
-    auto reidConfig = ReIdConfig::load(configPath, "reid");
-    auto reid = std::make_unique<ReId>(reidConfig);
+    // Load reid
+    std::ifstream file(configPath);
+    auto config = nlohmann::json::parse(file);
+    bool reid = vm["reid"].as<bool>() && config.contains("reid");
 
-    // Output setup
+    if (reid)
+    {
+        auto reidConfig = ReIdConfig::load(configPath, "reid");
+        reidModel = std::make_unique<ReId>(reidConfig);
+    }
+
+    // Display
+    bool display = vm["display"].as<bool>() || !vm.count("output");
+
+    // Output
     cv::VideoWriter writer;
     if (vm.count("output"))
     {
@@ -96,10 +111,13 @@ int main(int argc, char *argv[])
         auto detections = detector->process(frame);
 
         // Extract features for each detection
-        for (auto &det : detections)
+        if (reidModel)
         {
-            cv::Mat roi = frame(det.bbox);
-            det.features = reid->process(roi);
+            for (auto &det : detections)
+            {
+                cv::Mat roi = frame(det.bbox);
+                det.features = reidModel->process(roi);
+            }
         }
 
         // Update tracker
