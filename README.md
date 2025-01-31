@@ -27,7 +27,7 @@ Follow installation instructions [here](https://gist.github.com/denguir/b21aa66a
 ## 🛠️ Build & Install
 ```bash
 # Build all apps
-meson setup build -Dbuild_apps=yolo,reid,classifier
+meson setup build -Dbuild_apps=classifier,mot,reid,yolo
 meson compile -C build
 
 # Or build a specific app
@@ -47,4 +47,5 @@ Each app has its own README with detailed instructions:
 - [Multi Object Tracking Guide](app/mot/README.md)
 
 ## TODO
+- Object segmentation
 - OCR app

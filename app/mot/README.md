@@ -112,5 +112,5 @@ meson compile -C build
 ```shell
 # in root directory
 cd build/app/mot
-./mot -i 0 -o data/webcam.mp4 -c data/config.json -d
+./mot -i 0 -o out.mp4 -c data/sort.json -d
 ```
