@@ -168,14 +168,12 @@ namespace trt
         return true;
     }
 
-    bool Engine::runInference(const cv::Mat image, std::vector<float> &featureVector)
+    bool Engine::runInference(const cv::Mat &image, std::vector<float> &featureVector)
     {
         // Single batch SISO inference (SBSISO)
-
-        // Convert the input image into a batch of size 1
         std::vector<cv::Mat> input_batch(1, image);
 
-        // Call Multi batch SISO (MBSISO)
+        // Call MBSISO
         std::vector<std::vector<float>> output_batch;
         bool success = runInference(input_batch, output_batch);
 
@@ -188,11 +186,9 @@ namespace trt
     bool Engine::runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<float>> &outputBatch)
     {
         // Multi batch SISO inference (MBSISO)
-
-        // Convert the input batch into a batch vector of size 1
         std::vector<std::vector<cv::Mat>> inputs(1, inputBatch);
 
-        // Call MIMO function
+        // Call MBMIMO
         std::vector<std::vector<std::vector<float>>> outputs;
         bool success = runInference(inputs, outputs);
 
@@ -204,9 +200,32 @@ namespace trt
         return success;
     }
 
+    bool Engine::runInference(const cv::Mat &image, std::vector<std::vector<float>> &outputs)
+    {
+        // Single batch SIMO inference (SBSIMO)
+        std::vector<cv::Mat> input_batch(1, image);
+
+        // Call MBSIMO
+        std::vector<std::vector<std::vector<float>>> output_batch;
+        bool success = runInference(input_batch, output_batch);
+        if (success)
+        {
+            outputs = output_batch[0];
+        }
+        return success;
+    }
+
+    bool Engine::runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<std::vector<float>>> &outputBatch)
+    {
+        // Multi batch SIMO inference (MBSIMO)
+        std::vector<std::vector<cv::Mat>> inputs(1, inputBatch);
+        bool success = runInference(inputs, outputBatch);
+        return success;
+    }
+
     bool Engine::runInference(const std::vector<std::vector<cv::Mat>> &inputs, std::vector<std::vector<std::vector<float>>> &outputs)
     {
-        // MIMO inference
+        // Multi batch MIMO inference (MBMIMO)
         if (inputs.empty() || inputs[0].empty())
         {
             m_logger.log(NvLogger::Severity::kERROR, "Provided input vector is empty!");

@@ -9,7 +9,7 @@ public:
 
 private:
     bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
-    virtual std::vector<Detection> postprocess(const std::vector<float> &featureVector);
+    virtual std::vector<Detection> postprocess(const trt::SingleOutput &featureVector);
 
 protected:
     float m_ratioWidth = 1.f;
@@ -24,7 +24,7 @@ public:
     using Yolo::Yolo;
 
 private:
-    std::vector<Detection> postprocess(const std::vector<float> &featureVector) override;
+    std::vector<Detection> postprocess(const trt::SingleOutput &featureVector) override;
 };
 
 using Yolov8 = Yolo;

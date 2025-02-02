@@ -22,7 +22,7 @@ bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
     return !dstImg.empty();
 }
 
-std::vector<Detection> Yolo::postprocess(const std::vector<float> &featureVector)
+std::vector<Detection> Yolo::postprocess(const trt::SingleOutput &featureVector)
 {
     const auto &outputDims = engine->getOutputDims();
     assert(outputDims.size() == 1);
@@ -92,7 +92,7 @@ std::vector<Detection> Yolo::postprocess(const std::vector<float> &featureVector
     return detections;
 }
 
-std::vector<Detection> Yolov7::postprocess(const std::vector<float> &featureVector)
+std::vector<Detection> Yolov7::postprocess(const trt::SingleOutput &featureVector)
 {
     const auto &outputDims = engine->getOutputDims();
     assert(outputDims.size() == 1);

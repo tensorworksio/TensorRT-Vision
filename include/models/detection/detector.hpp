@@ -32,10 +32,11 @@ struct DetectorConfig : JsonConfig
     std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<DetectorConfig>(*this); }
 };
 
-class Detector : public trt::ModelProcessor<std::vector<Detection>>
+class Detector : public trt::SISOProcessor<std::vector<Detection>>
 {
 public:
-    Detector(const DetectorConfig &t_config) : ModelProcessor(t_config.engine), config(t_config) {};
+    Detector(const DetectorConfig &t_config)
+        : trt::SISOProcessor<std::vector<Detection>>(t_config.engine), config(t_config) {};
     virtual ~Detector() = default;
     const DetectorConfig &getConfig() const { return config; };
     const std::string getClassName(int class_id) const

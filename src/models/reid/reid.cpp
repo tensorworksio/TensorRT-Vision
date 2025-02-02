@@ -16,7 +16,7 @@ bool ReId::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
     return !dstImg.empty();
 }
 
-std::vector<float> ReId::postprocess(const std::vector<float> &featureVector)
+std::vector<float> ReId::postprocess(const trt::SingleOutput &featureVector)
 {
     return vector_ops::normalize(featureVector);
 }

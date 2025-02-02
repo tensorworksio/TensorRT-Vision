@@ -64,9 +64,11 @@ namespace trt
         // Run inference
         // Input format: [input][batch][cv::Mat]
         // Output format: [batch][output][feature_vector]
-        bool runInference(const cv::Mat image, std::vector<float> &featureVector);
-        bool runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<float>> &outputBatch);
-        bool runInference(const std::vector<std::vector<cv::Mat>> &inputs, std::vector<std::vector<std::vector<float>>> &outputs);
+        bool runInference(const cv::Mat &image, std::vector<float> &featureVector);                                                // SBSISO
+        bool runInference(const cv::Mat &image, std::vector<std::vector<float>> &outputs);                                         // SBSIMO
+        bool runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<float>> &outputBatch);                   // MBSISO
+        bool runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<std::vector<float>>> &outputBatch);      // MBSIMO
+        bool runInference(const std::vector<std::vector<cv::Mat>> &inputs, std::vector<std::vector<std::vector<float>>> &outputs); // MBMIMO
 
         [[nodiscard]] const EngineOptions &getOptions() const { return m_options; };
         [[nodiscard]] const std::vector<nvinfer1::Dims3> &getInputDims() const { return m_inputDims; };
