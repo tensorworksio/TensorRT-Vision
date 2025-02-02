@@ -136,6 +136,7 @@ namespace trt
                        {
                            return postprocess(featureVector);
                        });
+        return outputs;
     }
 
 } // namespace trt
