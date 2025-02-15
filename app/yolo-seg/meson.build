@@ -22,7 +22,7 @@ custom_target('yolo-data',
     build_by_default: true
 )
 
-executable('yolo',
+executable('yolo-seg',
     yolo_src,
     dependencies: [engine_dep],
     include_directories: include_directories('.'),

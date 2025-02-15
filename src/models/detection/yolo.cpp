@@ -5,6 +5,13 @@
 bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
 {
     // These params will be used in the post-processing stage
+    // FIXME: This 4 values assume that images in a batch have the same size
+    // original_size must be stored in a datastructure
+    // Plan:
+    // preprocess return a Frame with original size stored + the processed image
+    // postprocess consumes network output + Frame
+    // postprocess returns a Frame
+
     m_imgHeight = static_cast<float>(srcImg.rows);
     m_imgWidth = static_cast<float>(srcImg.cols);
     m_ratioHeight = m_imgHeight / static_cast<float>(size.height);
@@ -29,7 +36,7 @@ std::vector<Detection> Yolo::postprocess(const trt::SingleOutput &featureVector)
 
     auto numChannels = outputDims[0].d[1];
     auto numAnchors = outputDims[0].d[2];
-    auto numClasses = numChannels - 4;
+    auto numClasses = numChannels - 4; // 4 bbox
 
     std::vector<cv::Rect> bboxes;
     bboxes.reserve(numAnchors);

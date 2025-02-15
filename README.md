@@ -47,5 +47,13 @@ Each app has its own README with detailed instructions:
 - [Multi Object Tracking Guide](app/mot/README.md)
 
 ## TODO
-- Object segmentation
+- Object segmentation app:
+    - segmentation folder
+    - yolo.cpp impl
+    - deteciton: Faster RCNN is a SIMO model -> Detector must not be a SISO that we inherit from, but each model should directly 
+      inherit from SISO or SIMOProcessor
+    - the same holds for segmentation
+    - in segmentation you would have: yolo.cpp but also mask_rcnn.cpp as well (Are the config the same ?)
+    - In yolo.cpp: preprocess assumes that a batch contains images of the same sizes which is not necesseraly true !
+    
 - OCR app
