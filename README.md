@@ -55,5 +55,7 @@ Each app has its own README with detailed instructions:
     - the same holds for segmentation
     - in segmentation you would have: yolo.cpp but also mask_rcnn.cpp as well (Are the config the same ?)
     - In yolo.cpp: preprocess assumes that a batch contains images of the same sizes which is not necesseraly true !
-    
+  
+- vector_utils inneficient
+
 - OCR app
