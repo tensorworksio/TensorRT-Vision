@@ -11,6 +11,7 @@ namespace seg
         trt::EngineConfig engine{};
         float confidenceThreshold = 0.25f;
         float nmsThreshold = 0.45f;
+        float maskThreshold = 0.5f;
         float nmsEta = 1.f;
         int topK = 100;
         std::vector<std::string> classNames{};
@@ -23,6 +24,8 @@ namespace seg
                 confidenceThreshold = data["confidence_threshold"].get<float>();
             if (data.contains("nms_threshold"))
                 nmsThreshold = data["nms_threshold"].get<float>();
+            if (data.contains("mask_threshold"))
+                maskThreshold = data["mask_threshold"].get<float>();
             if (data.contains("nms_eta"))
                 nmsEta = data["nms_eta"].get<float>();
             if (data.contains("top_k"))

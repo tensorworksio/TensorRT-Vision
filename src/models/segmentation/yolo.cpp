@@ -24,7 +24,7 @@ namespace seg
         cv::cvtColor(srcImg, dstImg, cv::COLOR_BGR2RGB);
 
         // Resize the model to the expected size and pad with background
-        dstImg = letterbox(dstImg, size, cv::Scalar(114, 114, 114), false, true, false, 32);
+        cv::resize(dstImg, dstImg, size, 0, 0, cv::INTER_LINEAR);
 
         // Convert to Float32
         dstImg.convertTo(dstImg, CV_32FC3, 1.f / 255.f);
@@ -55,6 +55,9 @@ namespace seg
         std::vector<int> class_ids;
         class_ids.reserve(numAnchors);
 
+        std::vector<cv::Mat> maskWeights;
+        maskWeights.reserve(numAnchors);
+
         cv::Mat output0 = cv::Mat(numChannels, numAnchors, CV_32F, const_cast<float *>(engineOutputs[0].data())).t();
         cv::Mat output1 = cv::Mat(numMasks, maskHeight * maskWidth, CV_32F, const_cast<float *>(engineOutputs[1].data()));
 
@@ -63,9 +66,9 @@ namespace seg
             auto rowPtr = output0.row(i).ptr<float>();
             auto bboxesPtr = rowPtr;
             auto scoresPtr = rowPtr + 4;
-            auto masksPtr = scoresPtr + numClasses;
+            auto maskWeightsPtr = scoresPtr + numClasses;
 
-            auto maxClsPtr = std::max_element(scoresPtr, masksPtr);
+            auto maxClsPtr = std::max_element(scoresPtr, maskWeightsPtr);
             float score = *maxClsPtr;
             int class_id = maxClsPtr - scoresPtr;
 
@@ -82,9 +85,12 @@ namespace seg
             float x1 = std::clamp((x + 0.5f * w) * m_ratioWidth, 0.f, m_imgWidth);
             float y1 = std::clamp((y + 0.5f * h) * m_ratioHeight, 0.f, m_imgHeight);
 
+            cv::Mat maskWeight = cv::Mat(1, numMasks, CV_32F, maskWeightsPtr);
+
             bboxes.emplace_back(cv::Rect2f(x0, y0, x1 - x0, y1 - y0));
             class_ids.emplace_back(class_id);
             scores.emplace_back(score);
+            maskWeights.emplace_back(maskWeight);
         }
 
         // Non Maximum Suppression
@@ -97,54 +103,41 @@ namespace seg
 
         for (auto &idx : indices)
         {
-            int x0 = static_cast<int>(bboxes[idx].x);
-            int y0 = static_cast<int>(bboxes[idx].y);
-            int x1 = x0 + static_cast<int>(bboxes[idx].width);
-            int y1 = y0 + static_cast<int>(bboxes[idx].height);
+            detections.emplace_back(Detection{class_ids[idx], scores[idx], bboxes[idx], getClassName(class_ids[idx])});
+        }
 
-            int x0_scaled = static_cast<int>((bboxes[idx].x / m_imgWidth) * maskWidth);
-            int y0_scaled = static_cast<int>((bboxes[idx].y / m_imgHeight) * maskHeight);
-            int x1_scaled = static_cast<int>(((bboxes[idx].x + bboxes[idx].width) / m_imgWidth) * maskWidth);
-            int y1_scaled = static_cast<int>(((bboxes[idx].y + bboxes[idx].height) / m_imgHeight) * maskHeight);
+        cv::Mat masks;
+        std::vector<cv::Mat> selectedWeights;
+        selectedWeights.reserve(indices.size());
 
-            cv::Mat selectedWeights = output0(cv::Range(idx, idx + 1), cv::Range(output0.cols - numMasks, output0.cols)); // 1 × numMasks
-            std::cout << "selectedWeights size: " << selectedWeights.size() << std::endl;
-            std::cout << "output1 size: " << output1.size() << std::endl;
-            cv::Mat maskWeights = cv::Mat(selectedWeights * output1).reshape(1, maskHeight); // maskHeight × maskWidth
-            std::cout << "maskWeights size: " << maskWeights.size() << std::endl;
+        for (auto &idx : indices)
+        {
+            selectedWeights.push_back(maskWeights[idx]);
+        }
+        cv::vconcat(selectedWeights, masks);
 
-            cv::Mat maskScoreScaled;
-            cv::exp(-maskWeights, maskScoreScaled);
-            maskScoreScaled = 1.0 / (1.0 + maskScoreScaled);
-            std::cout << "maskScoreScaled size: " << maskScoreScaled.size() << std::endl;
+        if (!masks.empty())
+        {
+            cv::Mat maskMap1d = (masks * output1).t();
+            cv::Mat maskMap2d = maskMap1d.reshape(indices.size(), {static_cast<int>(maskWidth), static_cast<int>(maskHeight)});
 
-            cv::Mat maskScoreScaledCrop = maskScoreScaled(cv::Range(y0_scaled, y1_scaled), cv::Range(x0_scaled, x1_scaled));
-            std::cout << "maskScoreScaledCrop size: " << maskScoreScaledCrop.size() << std::endl;
+            std::vector<cv::Mat> maskChannels;
+            cv::split(maskMap2d, maskChannels);
 
-            cv::Mat maskScoreCrop;
-            cv::resize(maskScoreScaledCrop, maskScoreCrop, cv::Size(x1 - x0, y1 - y0), cv::INTER_CUBIC);
+            cv::Rect roi;
+            roi = cv::Rect(0, 0, maskWidth, maskHeight);
 
-            cv::Size blurSize = cv::Size(static_cast<int>(m_imgWidth) / maskWidth, static_cast<int>(m_imgHeight) / maskHeight);
-            cv::blur(maskScoreCrop, maskScoreCrop, blurSize);
+            for (size_t i = 0; i < indices.size(); i++)
+            {
+                cv::Mat dest, mask;
+                cv::exp(-maskChannels[i], dest);
+                dest = 1.0 / (1.0 + dest);
+                dest = dest(roi);
+                cv::resize(dest, mask, cv::Size(static_cast<int>(m_imgWidth), static_cast<int>(m_imgHeight)), cv::INTER_LINEAR);
 
-            cv::Mat maskCrop;
-            cv::threshold(maskScoreCrop, maskCrop, 0.05f, 1.0f, cv::THRESH_BINARY_INV);
-
-            cv::Mat mask;
-            maskCrop.convertTo(mask, CV_8UC1, 255);
-            std::cout << "mask size: " << mask.size() << std::endl;
-
-            // Debug prints
-            cv::Scalar mean1 = cv::mean(output1);
-            cv::Scalar mean2 = cv::mean(selectedWeights);
-            std::cout << "output1 mean: " << mean1[0] << std::endl;
-            std::cout << "selectedWeights mean: " << mean2[0] << std::endl;
-
-            double minVal, maxVal;
-            cv::minMaxLoc(maskScoreScaledCrop, &minVal, &maxVal);
-            std::cout << "maskScoreScaledCrop range: " << minVal << " to " << maxVal << std::endl;
-
-            detections.emplace_back(Detection{class_ids[idx], scores[idx], bboxes[idx], getClassName(class_ids[idx]), mask});
+                cv::Rect rect = cv::Rect(static_cast<int>(detections[i].bbox.x), static_cast<int>(detections[i].bbox.y), static_cast<int>(detections[i].bbox.width), static_cast<int>(detections[i].bbox.height));
+                detections[i].mask = mask(rect) > config.maskThreshold;
+            }
         }
 
         return detections;
