@@ -124,19 +124,28 @@ namespace seg
             std::vector<cv::Mat> maskChannels;
             cv::split(maskMap2d, maskChannels);
 
-            cv::Rect roi;
-            roi = cv::Rect(0, 0, maskWidth, maskHeight);
-
             for (size_t i = 0; i < indices.size(); i++)
             {
                 cv::Mat dest, mask;
                 cv::exp(-maskChannels[i], dest);
                 dest = 1.0 / (1.0 + dest);
-                dest = dest(roi);
-                cv::resize(dest, mask, cv::Size(static_cast<int>(m_imgWidth), static_cast<int>(m_imgHeight)), cv::INTER_LINEAR);
+                // Calculate mask coordinates corresponding to bbox
+                float scaleX = static_cast<float>(maskWidth) / m_imgWidth;
+                float scaleY = static_cast<float>(maskHeight) / m_imgHeight;
 
-                cv::Rect rect = cv::Rect(static_cast<int>(detections[i].bbox.x), static_cast<int>(detections[i].bbox.y), static_cast<int>(detections[i].bbox.width), static_cast<int>(detections[i].bbox.height));
-                detections[i].mask = mask(rect) > config.maskThreshold;
+                cv::Rect maskROI(
+                    static_cast<int>(detections[i].bbox.x * scaleX),
+                    static_cast<int>(detections[i].bbox.y * scaleY),
+                    static_cast<int>(detections[i].bbox.width * scaleX),
+                    static_cast<int>(detections[i].bbox.height * scaleY));
+
+                // Ensure ROI stays within mask bounds
+                maskROI &= cv::Rect(0, 0, maskWidth, maskHeight);
+
+                // Extract and resize only the relevant portion
+                cv::Mat maskPart = dest(maskROI);
+                cv::resize(maskPart, mask, detections[i].bbox.size(), cv::INTER_LINEAR);
+                detections[i].mask = mask > config.maskThreshold;
             }
         }
 
