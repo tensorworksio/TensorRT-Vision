@@ -101,50 +101,48 @@ namespace seg
         std::vector<Detection> detections;
         detections.reserve(indices.size());
 
+        std::vector<cv::Mat> maskWeightsToKeep;
+        maskWeightsToKeep.reserve(indices.size());
+
         for (auto &idx : indices)
         {
+            maskWeightsToKeep.push_back(maskWeights[idx]);
             detections.emplace_back(Detection{class_ids[idx], scores[idx], bboxes[idx], getClassName(class_ids[idx])});
         }
 
-        cv::Mat masks;
-        std::vector<cv::Mat> selectedWeights;
-        selectedWeights.reserve(indices.size());
-
-        for (auto &idx : indices)
+        // Process masks
+        if (!maskWeightsToKeep.empty())
         {
-            selectedWeights.push_back(maskWeights[idx]);
-        }
-        cv::vconcat(selectedWeights, masks);
+            cv::Mat masks;
+            cv::vconcat(maskWeightsToKeep, masks);
+            cv::Mat maskWeightMap = (masks * output1).t();
 
-        if (!masks.empty())
-        {
-            cv::Mat maskMap1d = (masks * output1).t();
-            cv::Mat maskMap2d = maskMap1d.reshape(indices.size(), {static_cast<int>(maskWidth), static_cast<int>(maskHeight)});
+            cv::Mat maskScoreMap;
+            cv::exp(-maskWeightMap, maskScoreMap);
+            maskScoreMap = 1.0 / (1.0 + maskScoreMap);
+            maskScoreMap = maskScoreMap.reshape(indices.size(), {static_cast<int>(maskWidth), static_cast<int>(maskHeight)});
 
             std::vector<cv::Mat> maskChannels;
-            cv::split(maskMap2d, maskChannels);
+            cv::split(maskScoreMap, maskChannels);
+            float maskScaleX = static_cast<float>(maskWidth) / m_imgWidth;
+            float maskScaleY = static_cast<float>(maskHeight) / m_imgHeight;
 
+            // Process each mask
             for (size_t i = 0; i < indices.size(); i++)
             {
-                cv::Mat dest, mask;
-                cv::exp(-maskChannels[i], dest);
-                dest = 1.0 / (1.0 + dest);
-                // Calculate mask coordinates corresponding to bbox
-                float scaleX = static_cast<float>(maskWidth) / m_imgWidth;
-                float scaleY = static_cast<float>(maskHeight) / m_imgHeight;
-
-                cv::Rect maskROI(
-                    static_cast<int>(detections[i].bbox.x * scaleX),
-                    static_cast<int>(detections[i].bbox.y * scaleY),
-                    static_cast<int>(detections[i].bbox.width * scaleX),
-                    static_cast<int>(detections[i].bbox.height * scaleY));
+                cv::Rect roi(
+                    static_cast<int>(detections[i].bbox.x * maskScaleX),
+                    static_cast<int>(detections[i].bbox.y * maskScaleY),
+                    static_cast<int>(detections[i].bbox.width * maskScaleX),
+                    static_cast<int>(detections[i].bbox.height * maskScaleY));
 
                 // Ensure ROI stays within mask bounds
-                maskROI &= cv::Rect(0, 0, maskWidth, maskHeight);
+                roi &= cv::Rect(0, 0, maskWidth, maskHeight);
 
                 // Extract and resize only the relevant portion
-                cv::Mat maskPart = dest(maskROI);
-                cv::resize(maskPart, mask, detections[i].bbox.size(), cv::INTER_LINEAR);
+                cv::Mat mask;
+                cv::Mat maskScaled = maskChannels[i](roi);
+                cv::resize(maskScaled, mask, detections[i].bbox.size(), cv::INTER_LINEAR);
                 detections[i].mask = mask > config.maskThreshold;
             }
         }
