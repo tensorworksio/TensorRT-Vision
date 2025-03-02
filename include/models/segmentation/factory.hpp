@@ -5,11 +5,12 @@
 
 #include "yolo.hpp"
 
-namespace det
+namespace seg
 {
     enum class ModelType
     {
-        YOLO,
+        YOLOv8,
+        YOLOv11,
         UNKNOWN
     };
 
@@ -17,8 +18,10 @@ namespace det
     {
         switch (type)
         {
-        case ModelType::YOLO:
-            return "yolo";
+        case ModelType::YOLOv8:
+            return "yolov8";
+        case ModelType::YOLOv11:
+            return "yolov11";
         default:
             throw std::runtime_error("Unkown model type");
         }
@@ -26,8 +29,9 @@ namespace det
 
     inline auto &getModels()
     {
-        static std::array<ModelType, 1> models{
-            ModelType::YOLO};
+        static std::array<ModelType, 2> models{
+            ModelType::YOLOv8,
+            ModelType::YOLOv11};
 
         return models;
     };
@@ -47,25 +51,32 @@ namespace det
         return ModelType::UNKNOWN;
     };
 
-    class DetectorFactory
+    class YoloFactory
     {
     public:
-        static std::unique_ptr<DetectorInterface> create(const std::string &config_file)
+        static std::unique_ptr<Yolo> create(const std::string &config_file)
         {
             std::ifstream file(config_file);
             auto data = nlohmann::json::parse(file);
-            ModelType model = getModelType(data["detector"]["architecture"]);
+            ModelType model = getModelType(data["detector"]["name"]);
+
+            auto config = YoloConfig();
+            config.loadFromJson(data["detector"]);
 
             switch (model)
             {
-            case ModelType::YOLO:
+            case ModelType::YOLOv8:
             {
-                return YoloFactory::create(data);
+                return std::make_unique<Yolov8>(config);
+            }
+            case ModelType::YOLOv11:
+            {
+                return std::make_unique<Yolov11>(config);
             }
             default:
-                throw std::runtime_error("Unknown model architecture");
+                throw std::runtime_error("Unknown model type");
             }
         }
     };
 
-} // det
+} // seg

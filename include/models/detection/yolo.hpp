@@ -2,10 +2,58 @@
 
 #include <types/detection.hpp>
 #include <utils/json_utils.hpp>
-#include <engine/processor.hpp>
+#include "detector.hpp"
 
 namespace det
 {
+    enum class YoloVersion
+    {
+        YOLOv7,
+        YOLOv8,
+        YOLOv11,
+        UNKNOWN
+    };
+
+    inline std::string getYoloVersionString(YoloVersion version)
+    {
+        switch (version)
+        {
+        case YoloVersion::YOLOv7:
+            return "yolov7";
+        case YoloVersion::YOLOv8:
+            return "yolov8";
+        case YoloVersion::YOLOv11:
+            return "yolov11";
+        default:
+            throw std::runtime_error("Unkown yolo version");
+        }
+    };
+
+    inline auto &getYoloModels()
+    {
+        static std::array<YoloVersion, 3> models{
+            YoloVersion::YOLOv7,
+            YoloVersion::YOLOv8,
+            YoloVersion::YOLOv11};
+
+        return models;
+    };
+
+    inline YoloVersion getYoloVersion(const std::string &name)
+    {
+        std::string lower_name = name;
+        std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+
+        for (const auto &version : getYoloModels())
+        {
+            if (lower_name == getYoloVersionString(version))
+            {
+                return version;
+            }
+        }
+        return YoloVersion::UNKNOWN;
+    };
+
     struct YoloConfig : JsonConfig
     {
         trt::EngineConfig engine{};
@@ -34,11 +82,11 @@ namespace det
         std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<YoloConfig>(*this); }
     };
 
-    class Yolo : public trt::SISOProcessor<std::vector<Detection>>
+    class Yolo : public Detector<trt::SingleOutput>
     {
     public:
         Yolo(const YoloConfig &t_config)
-            : trt::SISOProcessor<std::vector<Detection>>(t_config.engine), config(t_config) {};
+            : Detector<trt::SingleOutput>(t_config.engine), config(t_config) {};
         virtual ~Yolo() = default;
         const YoloConfig &getConfig() const { return config; };
         const std::string getClassName(int class_id) const
@@ -69,4 +117,34 @@ namespace det
 
     using Yolov8 = Yolo;
     using Yolov11 = Yolo;
+
+    class YoloFactory
+    {
+    public:
+        static std::unique_ptr<Yolo> create(const nlohmann::json &data)
+        {
+            YoloVersion version = getYoloVersion(data["detector"]["version"]);
+
+            auto config = YoloConfig();
+            config.loadFromJson(data["detector"]);
+
+            switch (version)
+            {
+            case YoloVersion::YOLOv7:
+            {
+                return std::make_unique<Yolov7>(config);
+            }
+            case YoloVersion::YOLOv8:
+            {
+                return std::make_unique<Yolov8>(config);
+            }
+            case YoloVersion::YOLOv11:
+            {
+                return std::make_unique<Yolov11>(config);
+            }
+            default:
+                throw std::runtime_error("Unsupported yolo version");
+            }
+        }
+    };
 } // det
