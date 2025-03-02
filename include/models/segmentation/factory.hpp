@@ -50,7 +50,7 @@ namespace seg
     class SegmenterFactory
     {
     public:
-        static std::unique_ptr<SegmenterInterface> create(const std::string &config_file)
+        static std::unique_ptr<trt::DetectionProcessor> create(const std::string &config_file)
         {
             std::ifstream file(config_file);
             auto data = nlohmann::json::parse(file);

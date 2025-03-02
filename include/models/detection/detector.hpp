@@ -2,20 +2,13 @@
 
 #include <types/detection.hpp>
 #include <engine/processor.hpp>
+#include <engine/interface.hpp>
 
 namespace det
 {
 
-    class DetectorInterface
-    {
-    public:
-        virtual ~DetectorInterface() = default;
-        virtual std::vector<Detection> process(const cv::Mat &frame) = 0;
-        virtual std::vector<std::vector<Detection>> process(const std::vector<cv::Mat> &frames) = 0;
-    };
-
     template <typename EngineOutput>
-    class Detector : public DetectorInterface, public trt::ModelProcessor<std::vector<Detection>, EngineOutput>
+    class Detector : public trt::DetectionProcessor, public trt::ModelProcessor<std::vector<Detection>, EngineOutput>
     {
     public:
         Detector(const trt::EngineConfig &config)

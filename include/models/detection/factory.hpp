@@ -50,7 +50,7 @@ namespace det
     class DetectorFactory
     {
     public:
-        static std::unique_ptr<DetectorInterface> create(const std::string &config_file)
+        static std::unique_ptr<trt::DetectionProcessor> create(const std::string &config_file)
         {
             std::ifstream file(config_file);
             auto data = nlohmann::json::parse(file);
