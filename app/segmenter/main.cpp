@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
     // Load model
     std::string configPath = vm["config"].as<std::string>();
-    auto model = seg::YoloFactory::create(configPath);
+    auto model = seg::SegmenterFactory::create(configPath);
 
     // Output
     cv::VideoWriter writer;

@@ -1,11 +1,55 @@
 #pragma once
 
 #include <types/detection.hpp>
-#include <engine/processor.hpp>
 #include <utils/json_utils.hpp>
+#include "segmenter.hpp"
 
 namespace seg
 {
+    enum class YoloVersion
+    {
+        YOLOv8,
+        YOLOv11,
+        UNKNOWN
+    };
+
+    inline std::string getYoloVersionString(YoloVersion version)
+    {
+        switch (version)
+        {
+        case YoloVersion::YOLOv8:
+            return "yolov8";
+        case YoloVersion::YOLOv11:
+            return "yolov11";
+        default:
+            throw std::runtime_error("Unkown yolo version");
+        }
+    };
+
+    inline auto &getYoloModels()
+    {
+        static std::array<YoloVersion, 2> models{
+            YoloVersion::YOLOv8,
+            YoloVersion::YOLOv11};
+
+        return models;
+    };
+
+    inline YoloVersion getYoloVersion(const std::string &name)
+    {
+        std::string lower_name = name;
+        std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+
+        for (const auto &version : getYoloModels())
+        {
+            if (lower_name == getYoloVersionString(version))
+            {
+                return version;
+            }
+        }
+        return YoloVersion::UNKNOWN;
+    };
+
     struct YoloConfig : JsonConfig
     {
         trt::EngineConfig engine{};
@@ -37,11 +81,11 @@ namespace seg
         std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<YoloConfig>(*this); }
     };
 
-    class Yolo : public trt::SIMOProcessor<std::vector<Detection>>
+    class Yolo : public Segmenter<trt::MultiOutput>
     {
     public:
         Yolo(const YoloConfig &t_config)
-            : trt::SIMOProcessor<std::vector<Detection>>(t_config.engine), config(t_config) {};
+            : Segmenter<trt::MultiOutput>(t_config.engine), config(t_config) {};
         virtual ~Yolo() = default;
         const YoloConfig &getConfig() const { return config; };
         const std::string getClassName(int class_id) const
@@ -63,4 +107,30 @@ namespace seg
 
     using Yolov8 = Yolo;
     using Yolov11 = Yolo;
+
+    class YoloFactory
+    {
+    public:
+        static std::unique_ptr<Yolo> create(const nlohmann::json &data)
+        {
+            YoloVersion version = getYoloVersion(data["segmenter"]["version"]);
+
+            auto config = YoloConfig();
+            config.loadFromJson(data["segmenter"]);
+
+            switch (version)
+            {
+            case YoloVersion::YOLOv8:
+            {
+                return std::make_unique<Yolov8>(config);
+            }
+            case YoloVersion::YOLOv11:
+            {
+                return std::make_unique<Yolov11>(config);
+            }
+            default:
+                throw std::runtime_error("Unsupported yolo version");
+            }
+        }
+    };
 } // seg

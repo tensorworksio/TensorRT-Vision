@@ -13,7 +13,7 @@ run_command('mkdir', '-p',
     check: false
 )
 
-custom_target('yolo-data',
+custom_target('detector-data',
     output: 'data',
     command: ['cp', '-r', 
         meson.current_source_dir() / data_dir,

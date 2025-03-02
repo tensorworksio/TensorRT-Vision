@@ -9,8 +9,7 @@ namespace seg
 {
     enum class ModelType
     {
-        YOLOv8,
-        YOLOv11,
+        YOLO,
         UNKNOWN
     };
 
@@ -18,10 +17,8 @@ namespace seg
     {
         switch (type)
         {
-        case ModelType::YOLOv8:
-            return "yolov8";
-        case ModelType::YOLOv11:
-            return "yolov11";
+        case ModelType::YOLO:
+            return "yolo";
         default:
             throw std::runtime_error("Unkown model type");
         }
@@ -29,9 +26,8 @@ namespace seg
 
     inline auto &getModels()
     {
-        static std::array<ModelType, 2> models{
-            ModelType::YOLOv8,
-            ModelType::YOLOv11};
+        static std::array<ModelType, 1> models{
+            ModelType::YOLO};
 
         return models;
     };
@@ -51,30 +47,23 @@ namespace seg
         return ModelType::UNKNOWN;
     };
 
-    class YoloFactory
+    class SegmenterFactory
     {
     public:
-        static std::unique_ptr<Yolo> create(const std::string &config_file)
+        static std::unique_ptr<SegmenterInterface> create(const std::string &config_file)
         {
             std::ifstream file(config_file);
             auto data = nlohmann::json::parse(file);
-            ModelType model = getModelType(data["detector"]["name"]);
-
-            auto config = YoloConfig();
-            config.loadFromJson(data["detector"]);
+            ModelType model = getModelType(data["segmenter"]["architecture"]);
 
             switch (model)
             {
-            case ModelType::YOLOv8:
+            case ModelType::YOLO:
             {
-                return std::make_unique<Yolov8>(config);
-            }
-            case ModelType::YOLOv11:
-            {
-                return std::make_unique<Yolov11>(config);
+                return YoloFactory::create(data);
             }
             default:
-                throw std::runtime_error("Unknown model type");
+                throw std::runtime_error("Unknown model architecture");
             }
         }
     };
