@@ -61,4 +61,6 @@ namespace seg
         std::vector<Detection> postprocess(const trt::MultiOutput &engineOutputs) override;
     };
 
+    using Yolov8 = Yolo;
+    using Yolov11 = Yolo;
 } // seg

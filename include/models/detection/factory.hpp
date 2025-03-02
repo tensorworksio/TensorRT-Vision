@@ -7,8 +7,7 @@
 
 namespace det
 {
-
-    enum class DetectorType
+    enum class ModelType
     {
         YOLOv7,
         YOLOv8,
@@ -16,45 +15,44 @@ namespace det
         UNKNOWN
     };
 
-    inline std::string getDetectorName(DetectorType type)
+    inline std::string getModelName(ModelType type)
     {
         switch (type)
         {
-        case DetectorType::YOLOv7:
+        case ModelType::YOLOv7:
             return "yolov7";
-        case DetectorType::YOLOv8:
+        case ModelType::YOLOv8:
             return "yolov8";
-        case DetectorType::YOLOv11:
+        case ModelType::YOLOv11:
             return "yolov11";
         default:
-            throw std::runtime_error("Unkown detector type");
+            throw std::runtime_error("Unkown model type");
         }
     };
 
-    inline auto &getDetectors()
+    inline auto &getModels()
     {
-        static std::array<DetectorType, 3> detectors{
-            DetectorType::YOLOv7,
-            DetectorType::YOLOv8,
-            DetectorType::YOLOv11};
+        static std::array<ModelType, 3> models{
+            ModelType::YOLOv7,
+            ModelType::YOLOv8,
+            ModelType::YOLOv11};
 
-        return detectors;
+        return models;
     };
 
-    inline DetectorType getDetectorType(const std::string &name)
+    inline ModelType getModelType(const std::string &name)
     {
         std::string lower_name = name;
         std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
 
-        for (const auto &type : getDetectors())
+        for (const auto &type : getModels())
         {
-            if (lower_name == getDetectorName(type))
+            if (lower_name == getModelName(type))
             {
                 return type;
             }
         }
-        return DetectorType::UNKNOWN;
-        return DetectorType::UNKNOWN;
+        return ModelType::UNKNOWN;
     };
 
     class YoloFactory
@@ -64,28 +62,29 @@ namespace det
         {
             std::ifstream file(config_file);
             auto data = nlohmann::json::parse(file);
-            DetectorType detector = getDetectorType(data["detector"]["name"]);
+            ModelType model = getModelType(data["detector"]["name"]);
 
             auto config = YoloConfig();
             config.loadFromJson(data["detector"]);
 
-            switch (detector)
+            switch (model)
             {
-            case DetectorType::YOLOv7:
+            case ModelType::YOLOv7:
             {
                 return std::make_unique<Yolov7>(config);
             }
-            case DetectorType::YOLOv8:
+            case ModelType::YOLOv8:
             {
                 return std::make_unique<Yolov8>(config);
             }
-            case DetectorType::YOLOv11:
+            case ModelType::YOLOv11:
             {
                 return std::make_unique<Yolov11>(config);
             }
             default:
-                throw std::runtime_error("Unknown detector type");
+                throw std::runtime_error("Unknown model type");
             }
         }
     };
+
 } // det

@@ -52,9 +52,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Load detector
+    // Load model
     std::string configPath = vm["config"].as<std::string>();
-    auto detector = det::YoloFactory::create(configPath);
+    auto model = det::YoloFactory::create(configPath);
 
     // Output
     cv::VideoWriter writer;
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
             break;
 
         // Detect objects
-        auto detections = detector->process(frame);
+        auto detections = model->process(frame);
 
         // Draw detections
         for (const auto &det : detections)
@@ -102,19 +102,13 @@ int main(int argc, char *argv[])
         }
 
         if (display)
-        {
             cv::imshow("Detections", frame);
-        }
 
         if (writer.isOpened())
-        {
             writer.write(frame);
-        }
 
         if (cv::waitKey(1) == 27)
-        {
             running = false;
-        }
     }
 
     if (cap.isOpened())
