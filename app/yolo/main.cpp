@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
     // Load detector
     std::string configPath = vm["config"].as<std::string>();
-    auto detector = DetectorFactory::create(configPath);
+    auto detector = det::YoloFactory::create(configPath);
 
     // Output
     cv::VideoWriter writer;
