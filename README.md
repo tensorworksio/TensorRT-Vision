@@ -46,3 +46,8 @@ Each app has its own README with detailed instructions:
 - [Multi Object Tracking Guide](app/mot/README.md)
 - [Object Classification Guide](app/classifier/README.md)
 - [Object Re-Identification Guide](app/reid/README.md)
+
+## 🙏 Credits
+
+This project builds upon foundations from:
+- [tensorrt-cpp-api](https://github.com/cyrusbehr/tensorrt-cpp-api) - A C++ TensorRT wrapper
