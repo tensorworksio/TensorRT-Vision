@@ -26,12 +26,12 @@ Follow installation instructions [here](https://gist.github.com/denguir/b21aa66a
 
 ## 🛠️ Build & Install
 ```bash
-# Build all apps
-meson setup build -Dbuild_apps=classifier,mot,reid,yolo
+# Build all apps (default)
+meson setup build
 meson compile -C build
 
-# Or build a specific app
-meson setup build -Dbuild_apps=yolo
+# Or explicitly specify apps to build
+meson setup build -Dbuild_apps=detector,mot
 meson compile -C build
 
 # Make sure trtexec is installed for model export

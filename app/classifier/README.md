@@ -44,11 +44,11 @@ meson compile -C build
 ```shell
 # in root directory
 cd build/app/classifier
-./classifier -i image.jpg -c data/config.json -d
+./classify -i image.jpg -c data/config.json -d
 ```
 
 ### JQuery Pipeline
 ```shell
 # in root directory
 cd build/app/classifier
-./classifier -i image.jpg -c data/config.json | jq .data.class_name
+./classify -i image.jpg -c data/config.json | jq .data.class_name
