@@ -41,15 +41,15 @@ struct ReIdConfig : public JsonConfig
     }
 };
 
-class ReId : public trt::ModelProcessor<std::vector<float>>
+class ReId : public trt::SISOProcessor<std::vector<float>>
 {
 public:
-    ReId(const ReIdConfig &config) : ModelProcessor(config.engine), m_config(config) {}
+    ReId(const ReIdConfig &config) : trt::SISOProcessor<std::vector<float>>(config.engine), m_config(config) {}
     const ReIdConfig &getConfig() const { return m_config; };
 
 protected:
     bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
-    std::vector<float> postprocess(const std::vector<float> &featureVector) override;
+    std::vector<float> postprocess(const trt::SingleOutput &featureVector) override;
 
 private:
     const ReIdConfig m_config;

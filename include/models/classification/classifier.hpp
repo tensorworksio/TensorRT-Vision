@@ -46,10 +46,10 @@ struct ClassifierConfig : JsonConfig
     std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<ClassifierConfig>(*this); }
 };
 
-class Classifier : public trt::ModelProcessor<Detection>
+class Classifier : public trt::SISOProcessor<Detection>
 {
 public:
-    Classifier(const ClassifierConfig &t_config) : ModelProcessor(t_config.engine), config(t_config) {}
+    Classifier(const ClassifierConfig &t_config) : trt::SISOProcessor<Detection>(t_config.engine), config(t_config) {}
     const ClassifierConfig &getConfig() const { return config; };
     const std::string getClassName(int class_id) const
     {
@@ -58,7 +58,7 @@ public:
 
 protected:
     bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
-    Detection postprocess(const std::vector<float> &featureVector) override;
+    Detection postprocess(const trt::SingleOutput &featureVector) override;
 
 private:
     const ClassifierConfig config;

@@ -15,7 +15,7 @@ bool Classifier::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size siz
     return !dstImg.empty();
 }
 
-Detection Classifier::postprocess(const std::vector<float> &featureVector)
+Detection Classifier::postprocess(const trt::SingleOutput &featureVector)
 {
     Detection det;
     auto maxElement = std::max_element(featureVector.begin(), featureVector.end());

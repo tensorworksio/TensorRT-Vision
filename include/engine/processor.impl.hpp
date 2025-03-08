@@ -6,8 +6,8 @@
 
 namespace trt
 {
-    template <typename OutputType>
-    ModelProcessor<OutputType>::ModelProcessor(const EngineConfig &config)
+    template <typename OutputType, typename EngineOutput>
+    ModelProcessor<OutputType, EngineOutput>::ModelProcessor(const EngineConfig &config)
     {
         // Engine options
         EngineOptions options;
@@ -18,8 +18,8 @@ namespace trt
         loadEngine(*engine, config.modelPath);
     }
 
-    template <typename OutputType>
-    OutputType ModelProcessor<OutputType>::process(const cv::Mat &image)
+    template <typename OutputType, typename EngineOutput>
+    OutputType ModelProcessor<OutputType, EngineOutput>::process(const cv::Mat &image)
     {
         if (image.empty())
         {
@@ -27,7 +27,7 @@ namespace trt
         }
 
         cv::Mat processedImage;
-        std::vector<float> featureVector;
+        EngineOutput featureVector;
 
         if (!preprocess(image, processedImage))
         {
@@ -40,8 +40,8 @@ namespace trt
         return postprocess(featureVector);
     }
 
-    template <typename OutputType>
-    std::vector<OutputType> ModelProcessor<OutputType>::process(const std::vector<cv::Mat> &imageBatch)
+    template <typename OutputType, typename EngineOutput>
+    std::vector<OutputType> ModelProcessor<OutputType, EngineOutput>::process(const std::vector<cv::Mat> &imageBatch)
     {
         if (imageBatch.empty())
         {
@@ -52,7 +52,7 @@ namespace trt
         std::vector<cv::Mat> processedBatch;
         processedBatch.reserve(imageBatch.size());
 
-        std::vector<std::vector<float>> featureBatch;
+        std::vector<EngineOutput> featureBatch;
         featureBatch.reserve(imageBatch.size());
 
         if (!preprocess(imageBatch, processedBatch))
@@ -66,7 +66,7 @@ namespace trt
         std::vector<cv::Mat> images;
         images.reserve(maxBatchSize);
 
-        std::vector<std::vector<float>> features;
+        std::vector<EngineOutput> features;
         features.reserve(maxBatchSize);
 
         for (size_t i = 0; i < processedBatch.size(); i += maxBatchSize)
@@ -85,8 +85,8 @@ namespace trt
         return postprocess(featureBatch);
     }
 
-    template <typename OutputType>
-    bool ModelProcessor<OutputType>::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg)
+    template <typename OutputType, typename EngineOutput>
+    bool ModelProcessor<OutputType, EngineOutput>::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg)
     {
         // Single batch SISO preprocessing (SBSISO)
         const auto &inputDims = engine->getInputDims();
@@ -96,8 +96,8 @@ namespace trt
         return preprocess(srcImg, dstImg, size);
     }
 
-    template <typename OutputType>
-    bool ModelProcessor<OutputType>::preprocess(const std::vector<cv::Mat> &inputBatch, std::vector<cv::Mat> &outputBatch)
+    template <typename OutputType, typename EngineOutput>
+    bool ModelProcessor<OutputType, EngineOutput>::preprocess(const std::vector<cv::Mat> &inputBatch, std::vector<cv::Mat> &outputBatch)
     {
         // Multi batch SISO preprocessing (MBSISO)
         const auto &inputDims = engine->getInputDims();
@@ -107,8 +107,8 @@ namespace trt
         return preprocess(inputBatch, outputBatch, size);
     }
 
-    template <typename OutputType>
-    bool ModelProcessor<OutputType>::preprocess(const std::vector<cv::Mat> &inputBatch, std::vector<cv::Mat> &outputBatch, cv::Size size)
+    template <typename OutputType, typename EngineOutput>
+    bool ModelProcessor<OutputType, EngineOutput>::preprocess(const std::vector<cv::Mat> &inputBatch, std::vector<cv::Mat> &outputBatch, cv::Size size)
     {
         outputBatch.reserve(inputBatch.size());
         cv::Mat processedImage;
@@ -123,8 +123,8 @@ namespace trt
         return true;
     }
 
-    template <typename OutputType>
-    std::vector<OutputType> ModelProcessor<OutputType>::postprocess(const std::vector<std::vector<float>> &featureBatch)
+    template <typename OutputType, typename EngineOutput>
+    std::vector<OutputType> ModelProcessor<OutputType, EngineOutput>::postprocess(const std::vector<EngineOutput> &featureBatch)
     {
         // Multi batch SISO postprocessing (MBSISO)
         std::vector<OutputType> outputs;
@@ -136,6 +136,7 @@ namespace trt
                        {
                            return postprocess(featureVector);
                        });
+        return outputs;
     }
 
 } // namespace trt

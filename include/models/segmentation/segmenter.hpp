@@ -4,14 +4,14 @@
 #include <engine/processor.hpp>
 #include <engine/interface.hpp>
 
-namespace det
+namespace seg
 {
 
     template <typename EngineOutput>
-    class Detector : public trt::DetectionProcessor, public trt::ModelProcessor<std::vector<Detection>, EngineOutput>
+    class Segmenter : public trt::DetectionProcessor, public trt::ModelProcessor<std::vector<Detection>, EngineOutput>
     {
     public:
-        Detector(const trt::EngineConfig &config)
+        Segmenter(const trt::EngineConfig &config)
             : trt::ModelProcessor<std::vector<Detection>, EngineOutput>(config) {}
 
         std::vector<Detection> process(const cv::Mat &frame) override
@@ -25,4 +25,4 @@ namespace det
         }
     };
 
-} // det
+} // seg

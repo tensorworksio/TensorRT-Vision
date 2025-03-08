@@ -5,7 +5,7 @@
 
 #include "yolo.hpp"
 
-namespace det
+namespace seg
 {
     enum class ModelType
     {
@@ -47,14 +47,14 @@ namespace det
         return ModelType::UNKNOWN;
     };
 
-    class DetectorFactory
+    class SegmenterFactory
     {
     public:
         static std::unique_ptr<trt::DetectionProcessor> create(const std::string &config_file)
         {
             std::ifstream file(config_file);
             auto data = nlohmann::json::parse(file);
-            ModelType model = getModelType(data["detector"]["architecture"]);
+            ModelType model = getModelType(data["segmenter"]["architecture"]);
 
             switch (model)
             {
@@ -68,4 +68,4 @@ namespace det
         }
     };
 
-} // det
+} // seg

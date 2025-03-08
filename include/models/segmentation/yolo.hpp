@@ -2,13 +2,12 @@
 
 #include <types/detection.hpp>
 #include <utils/json_utils.hpp>
-#include "detector.hpp"
+#include "segmenter.hpp"
 
-namespace det
+namespace seg
 {
     enum class YoloVersion
     {
-        YOLOv7,
         YOLOv8,
         YOLOv11,
         UNKNOWN
@@ -18,8 +17,6 @@ namespace det
     {
         switch (version)
         {
-        case YoloVersion::YOLOv7:
-            return "yolov7";
         case YoloVersion::YOLOv8:
             return "yolov8";
         case YoloVersion::YOLOv11:
@@ -31,8 +28,7 @@ namespace det
 
     inline auto &getYoloModels()
     {
-        static std::array<YoloVersion, 3> models{
-            YoloVersion::YOLOv7,
+        static std::array<YoloVersion, 2> models{
             YoloVersion::YOLOv8,
             YoloVersion::YOLOv11};
 
@@ -59,6 +55,7 @@ namespace det
         trt::EngineConfig engine{};
         float confidenceThreshold = 0.25f;
         float nmsThreshold = 0.45f;
+        float maskThreshold = 0.5f;
         float nmsEta = 1.f;
         int topK = 100;
         std::vector<std::string> classNames{};
@@ -71,6 +68,8 @@ namespace det
                 confidenceThreshold = data["confidence_threshold"].get<float>();
             if (data.contains("nms_threshold"))
                 nmsThreshold = data["nms_threshold"].get<float>();
+            if (data.contains("mask_threshold"))
+                maskThreshold = data["mask_threshold"].get<float>();
             if (data.contains("nms_eta"))
                 nmsEta = data["nms_eta"].get<float>();
             if (data.contains("top_k"))
@@ -82,11 +81,11 @@ namespace det
         std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<YoloConfig>(*this); }
     };
 
-    class Yolo : public Detector<trt::SingleOutput>
+    class Yolo : public Segmenter<trt::MultiOutput>
     {
     public:
         Yolo(const YoloConfig &t_config)
-            : Detector<trt::SingleOutput>(t_config.engine), config(t_config) {};
+            : Segmenter<trt::MultiOutput>(t_config.engine), config(t_config) {};
         virtual ~Yolo() = default;
         const YoloConfig &getConfig() const { return config; };
         const std::string getClassName(int class_id) const
@@ -103,16 +102,7 @@ namespace det
 
     private:
         bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
-        virtual std::vector<Detection> postprocess(const trt::SingleOutput &featureVector);
-    };
-
-    class Yolov7 : public Yolo
-    {
-    public:
-        using Yolo::Yolo;
-
-    private:
-        std::vector<Detection> postprocess(const trt::SingleOutput &featureVector) override;
+        std::vector<Detection> postprocess(const trt::MultiOutput &engineOutputs) override;
     };
 
     using Yolov8 = Yolo;
@@ -123,17 +113,13 @@ namespace det
     public:
         static std::unique_ptr<Yolo> create(const nlohmann::json &data)
         {
-            YoloVersion version = getYoloVersion(data["detector"]["name"]);
+            YoloVersion version = getYoloVersion(data["segmenter"]["name"]);
 
             auto config = YoloConfig();
-            config.loadFromJson(data["detector"]);
+            config.loadFromJson(data["segmenter"]);
 
             switch (version)
             {
-            case YoloVersion::YOLOv7:
-            {
-                return std::make_unique<Yolov7>(config);
-            }
             case YoloVersion::YOLOv8:
             {
                 return std::make_unique<Yolov8>(config);
@@ -147,4 +133,4 @@ namespace det
             }
         }
     };
-} // det
+} // seg

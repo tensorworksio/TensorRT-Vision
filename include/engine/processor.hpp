@@ -4,7 +4,7 @@
 
 namespace trt
 {
-    template <typename OutputType>
+    template <typename OutputType, typename EngineOutput>
     class ModelProcessor
     {
     public:
@@ -27,15 +27,26 @@ namespace trt
         bool preprocess(const std::vector<cv::Mat> &inputBatch, std::vector<cv::Mat> &outputBatch, cv::Size size);
 
         // Image postprocessing
-        virtual OutputType postprocess(const std::vector<float> &featureVector) = 0;
+        virtual OutputType postprocess(const EngineOutput &featureVector) = 0;
 
         // Batch postprocessing
-        std::vector<OutputType> postprocess(const std::vector<std::vector<float>> &featureBatch);
+        std::vector<OutputType> postprocess(const std::vector<EngineOutput> &featureBatch);
 
     protected:
         std::unique_ptr<Engine> engine = nullptr;
     };
-
 } // namespace trt
 
 #include "processor.impl.hpp"
+
+namespace trt
+{
+    using SingleOutput = std::vector<float>;
+    using MultiOutput = std::vector<std::vector<float>>;
+
+    template <typename OutputType>
+    using SISOProcessor = ModelProcessor<OutputType, SingleOutput>;
+
+    template <typename OutputType>
+    using SIMOProcessor = ModelProcessor<OutputType, MultiOutput>;
+}; // namespace trt

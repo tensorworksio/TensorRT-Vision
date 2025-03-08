@@ -1,13 +1,9 @@
 #include <string>
 #include <signal.h>
 #include <atomic>
-#include <boost/program_options.hpp>
 
 #include <opencv2/opencv.hpp>
-
-#include <tracking/factory.hpp>
-#include <models/reid/reid.hpp>
-#include <models/detection/factory.hpp>
+#include <boost/program_options.hpp>
 #include <models/segmentation/factory.hpp>
 
 namespace po = boost::program_options;
@@ -25,7 +21,6 @@ int main(int argc, char *argv[])
     options.add_options()("help,h", "Show help message");
     options.add_options()("input,i", po::value<std::string>()->required(), "Input video file or camera index (0,1,...)");
     options.add_options()("config,c", po::value<std::string>(), "Path to model config.json");
-    options.add_options()("reid", po::bool_switch(), "Activate ReId");
     options.add_options()("output,o", po::value<std::string>(), "Output video file");
     options.add_options()("display,d", po::bool_switch(), "Display video frames");
 
@@ -57,32 +52,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Load config
+    // Load model
     std::string configPath = vm["config"].as<std::string>();
-    std::ifstream file(configPath);
-    auto config = nlohmann::json::parse(file);
-    bool reid = vm["reid"].as<bool>() && config.contains("reid");
-    bool segment = config.contains("segmenter");
-
-    // Load tracker & model
-    auto tracker = TrackerFactory::create(configPath);
-
-    std::unique_ptr<ReId> reidModel = nullptr;
-    if (reid)
-    {
-        auto reidConfig = ReIdConfig::load(configPath, "reid");
-        reidModel = std::make_unique<ReId>(reidConfig);
-    }
-
-    std::unique_ptr<trt::DetectionProcessor> detector = nullptr;
-    if (segment)
-    {
-        detector = seg::SegmenterFactory::create(configPath);
-    }
-    else
-    {
-        detector = det::DetectorFactory::create(configPath);
-    }
+    auto model = seg::SegmenterFactory::create(configPath);
 
     // Output
     cv::VideoWriter writer;
@@ -105,7 +77,7 @@ int main(int argc, char *argv[])
     bool display = vm["display"].as<bool>() || !vm.count("output");
     if (display)
     {
-        cv::namedWindow("Multi Object Tracking", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Segmentations", cv::WINDOW_AUTOSIZE);
     }
 
     cv::Mat frame;
@@ -118,43 +90,30 @@ int main(int argc, char *argv[])
             break;
 
         // Detect objects
-        auto detections = detector->process(frame);
+        auto detections = model->process(frame);
 
-        // Extract features for each detection
-        if (reidModel)
-        {
-            for (auto &det : detections)
-            {
-                cv::Mat roi = frame(det.bbox);
-                det.features = reidModel->process(roi);
-            }
-        }
-
-        // Update tracker
-        tracker->update(detections);
-
-        // Visualize results
+        // Draw masks
         cv::Mat imageMask = cv::Mat::zeros(frame.rows, frame.cols, CV_8UC3);
         for (const auto &det : detections)
         {
-            cv::rectangle(frame, det.bbox, det.getTrackColor(), 2);
-            std::string label = det.class_name + " ID:" + std::to_string(det.id);
-            cv::putText(frame, label,
-                        cv::Point(det.bbox.x, det.bbox.y - 5),
-                        cv::FONT_HERSHEY_SIMPLEX, 0.5, det.getTrackColor(), 2);
+            if (det.mask.empty())
+                continue;
 
-            if (!det.mask.empty())
-            {
-                cv::Mat colorMask(det.mask.size(), CV_8UC3, det.getClassColor());
-                cv::Mat roiMask = imageMask(det.bbox);
-                colorMask.copyTo(roiMask, det.mask);
-            }
+            cv::Mat colorMask(det.mask.size(), CV_8UC3, det.getClassColor());
+            cv::Mat roiMask = imageMask(det.bbox);
+            colorMask.copyTo(roiMask, det.mask);
+
+            // Optionally draw bounding box and label
+            cv::rectangle(frame, det.bbox, det.getClassColor(), 2);
+            cv::putText(frame, det.class_name,
+                        cv::Point(det.bbox.x, det.bbox.y - 5),
+                        cv::FONT_HERSHEY_SIMPLEX, 0.5, det.getClassColor(), 2);
         }
         // Apply the final mask
         cv::addWeighted(frame, 0.9, imageMask, 0.3, 0, frame);
 
         if (display)
-            cv::imshow("Multi Object Tracking", frame);
+            cv::imshow("Segmentations", frame);
 
         if (writer.isOpened())
             writer.write(frame);
@@ -163,7 +122,6 @@ int main(int argc, char *argv[])
             running = false;
     }
 
-    // Cleanup
     if (cap.isOpened())
         cap.release();
 

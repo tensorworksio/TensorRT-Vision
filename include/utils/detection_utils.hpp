@@ -65,6 +65,17 @@ inline std::vector<float> softmax(const std::vector<float> &logits)
     return vector_ops::mul(exp_values, 1.0f / sum_exp);
 }
 
+inline std::vector<float> sigmoid(const std::vector<float> &logits)
+{
+    std::vector<float> results(logits.size());
+    std::transform(logits.begin(), logits.end(), results.begin(),
+                   [](float x)
+                   {
+                       return 1.0f / (1.0f + std::exp(-x));
+                   });
+    return results;
+}
+
 inline float cosineSimilarity(const std::vector<float> &vec1, const std::vector<float> &vec2)
 {
     float dotProduct = vector_ops::dot(vec1, vec2);
