@@ -33,7 +33,7 @@ In `data` folder, add your `config.json`:
 {
   "segmenter": {
     "architecture": "yolo",
-    "version": "yolov8",
+    "name": "yolov8",
     "confidence_threshold": 0.25,
     "nms_threshold": 0.45,
     "mask_threshold": 0.5,
@@ -56,7 +56,7 @@ In `data` folder, add your `config.json`:
 {
   "segmenter": {
     "architecture": "yolo",
-    "version": "yolov11",
+    "name": "yolov11",
     "confidence_threshold": 0.25,
     "nms_threshold": 0.45,
     "mask_threshold": 0.5,

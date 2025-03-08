@@ -113,7 +113,7 @@ namespace seg
     public:
         static std::unique_ptr<Yolo> create(const nlohmann::json &data)
         {
-            YoloVersion version = getYoloVersion(data["segmenter"]["version"]);
+            YoloVersion version = getYoloVersion(data["segmenter"]["name"]);
 
             auto config = YoloConfig();
             config.loadFromJson(data["segmenter"]);

@@ -123,7 +123,7 @@ namespace det
     public:
         static std::unique_ptr<Yolo> create(const nlohmann::json &data)
         {
-            YoloVersion version = getYoloVersion(data["detector"]["version"]);
+            YoloVersion version = getYoloVersion(data["detector"]["name"]);
 
             auto config = YoloConfig();
             config.loadFromJson(data["detector"]);

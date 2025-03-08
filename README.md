@@ -41,18 +41,8 @@ alias trtexec='/usr/src/tensorrt/bin/trtexec'
 ## 🚀 Quick Start
 Each app has its own README with detailed instructions:
 
-- [Classification Guide](app/classifier/README.md)
-- [Re-Identification Guide](app/reid/README.md)
-- [YOLO Detection Guide](app/yolo/README.md)
+- [Object Detection Guide](app/detector/README.md)
+- [Object Segmentation Guide](app/segmenter/README.md)
 - [Multi Object Tracking Guide](app/mot/README.md)
-
-## TODO
-- Object segmentation app:
-    - yolo config are very redundant, maybe config should be written once and loaded accordingly
-    - In yolo.cpp: preprocess assumes that a batch contains images of the same sizes which is not necesseraly true !
-    - No need for letterbox ?
-    
-  
-- vector_utils inneficient
-
-- OCR app
+- [Object Classification Guide](app/classifier/README.md)
+- [Object Re-Identification Guide](app/reid/README.md)

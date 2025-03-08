@@ -34,7 +34,7 @@ In `data` folder, add your `config.json`:
 {
   "detector": {
     "architecture": "yolo",
-    "version": "yolov7",
+    "name": "yolov7",
     "confidence_threshold": 0.25,
     "nms_threshold": 0.45,
     "engine": {
@@ -56,7 +56,7 @@ In `data` folder, add your `config.json`:
 {
   "detector": {
     "architecture": "yolo",
-    "version": "yolov8",
+    "name": "yolov8",
     "confidence_threshold": 0.25,
     "nms_threshold": 0.45,
     "engine": {
@@ -78,7 +78,7 @@ In `data` folder, add your `config.json`:
 {
   "detector": {
     "architecture": "yolo",
-    "version": "yolov11",
+    "name": "yolov11",
     "confidence_threshold": 0.25,
     "nms_threshold": 0.45,
     "engine": {
