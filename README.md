@@ -12,9 +12,10 @@
 ## 📋 Overview
 TensorRT-Vision provides optimized inference for computer vision models using NVIDIA TensorRT. It supports:
 
-- Object Classification
-- Object Re-Identification  
 - Object Detection
+- Object Segmentation
+- Object Classification
+- Object Re-Identification
 - Multi Object Tracking
 
 ## ⚙️ Requirements
