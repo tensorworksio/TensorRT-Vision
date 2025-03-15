@@ -38,10 +38,10 @@ int main(int argc, char *argv[])
 
     // Config
     std::string configPath = vm["config"].as<std::string>();
-    auto config = ClassifierConfig::load(configPath);
+    auto config = cls::ClassifierConfig::load(configPath);
 
     // Process image
-    Classifier classifier(config);
+    cls::Classifier classifier(config);
     Detection det = classifier.process(image);
 
     // Output
