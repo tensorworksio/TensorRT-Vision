@@ -67,11 +67,11 @@ int main(int argc, char *argv[])
     // Load tracker & model
     auto tracker = TrackerFactory::create(configPath);
 
-    std::unique_ptr<ReId> reidModel = nullptr;
+    std::unique_ptr<reid::ReId> reidModel = nullptr;
     if (reid)
     {
-        auto reidConfig = ReIdConfig::load(configPath, "reid");
-        reidModel = std::make_unique<ReId>(reidConfig);
+        auto reidConfig = reid::ReIdConfig::load(configPath, "reid");
+        reidModel = std::make_unique<reid::ReId>(reidConfig);
     }
 
     std::unique_ptr<trt::DetectionProcessor> detector = nullptr;

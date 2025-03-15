@@ -47,12 +47,12 @@ int main(int argc, char *argv[])
     }
 
     // Config
-    ReIdConfig config;
+    reid::ReIdConfig config;
     std::string configPath = vm["config"].as<std::string>();
-    config = ReIdConfig::load(configPath);
+    config = reid::ReIdConfig::load(configPath);
 
     // Process images
-    ReId reid(config);
+    reid::ReId reid(config);
     auto featureVector1 = reid.process(queryImage);
     auto featureVector2 = reid.process(keyImage);
 
