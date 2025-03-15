@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     auto config = cls::ClassifierConfig::load(configPath);
 
     // Process image
-    cls::Classifier classifier(config);
+    cls::SingleLabelClassifier classifier(config);
     Detection det = classifier.process(image);
 
     // Output

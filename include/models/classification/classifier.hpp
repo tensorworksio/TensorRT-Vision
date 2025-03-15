@@ -50,30 +50,53 @@ namespace cls
         std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<ClassifierConfig>(*this); }
     };
 
-    class Classifier : public trt::ClassificationProcessor, public trt::SISOProcessor<Detection>
+    // Base classifier class
+    class BaseClassifier : public trt::ClassificationProcessor, public trt::SISOProcessor<Detection>
     {
     public:
-        Classifier(const ClassifierConfig &t_config) : trt::SISOProcessor<Detection>(t_config.engine), config(t_config) {}
+        BaseClassifier(const ClassifierConfig &t_config) : trt::SISOProcessor<Detection>(t_config.engine), config(t_config) {}
+        virtual ~BaseClassifier() = default;
+
         Detection process(const cv::Mat &frame) override
         {
             return trt::SISOProcessor<Detection>::process(frame);
         }
+
         std::vector<Detection> process(const std::vector<cv::Mat> &frames) override
         {
             return trt::SISOProcessor<Detection>::process(frames);
         }
-        const ClassifierConfig &getConfig() const { return config; };
+
+        const ClassifierConfig &getConfig() const { return config; }
+
         const std::string getClassName(int class_id) const
         {
             return (static_cast<size_t>(class_id) < config.classNames.size()) ? config.classNames[class_id] : std::to_string(class_id);
-        };
+        }
 
     protected:
         bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
-        Detection postprocess(const trt::SingleOutput &featureVector) override;
-
-    private:
         const ClassifierConfig config;
     };
 
-} // cls
+    // Single label classifier
+    class SingleLabelClassifier : public BaseClassifier
+    {
+    public:
+        SingleLabelClassifier(const ClassifierConfig &t_config) : BaseClassifier(t_config) {}
+
+    protected:
+        Detection postprocess(const trt::SingleOutput &featureVector) override;
+    };
+
+    // Multi label classifier
+    class MultiLabelClassifier : public BaseClassifier
+    {
+    public:
+        MultiLabelClassifier(const ClassifierConfig &t_config) : BaseClassifier(t_config) {}
+
+    protected:
+        Detection postprocess(const trt::SingleOutput &featureVector) override;
+    };
+
+} // namespace cls
