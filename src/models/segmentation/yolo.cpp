@@ -7,35 +7,19 @@ namespace seg
 
     bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
     {
-        // These params will be used in the post-processing stage
-        // FIXME: This 4 values assume that images in a batch have the same size
-        // original_size must be stored in a datastructure
-        // Plan:
-        // preprocess return a Frame with original size stored + the processed image
-        // postprocess consumes network output + Frame
-        // postprocess returns a Frame
-
-        m_imgHeight = static_cast<float>(srcImg.rows);
-        m_imgWidth = static_cast<float>(srcImg.cols);
-        m_ratioHeight = m_imgHeight / static_cast<float>(size.height);
-        m_ratioWidth = m_imgWidth / static_cast<float>(size.width);
-
-        // The model expects RGB input
         cv::cvtColor(srcImg, dstImg, cv::COLOR_BGR2RGB);
-
-        // Resize the model to the expected size and pad with background
         cv::resize(dstImg, dstImg, size, 0, 0, cv::INTER_LINEAR);
-
-        // Convert to Float32
         dstImg.convertTo(dstImg, CV_32FC3, 1.f / 255.f);
-
         return !dstImg.empty();
     }
 
     std::vector<Detection> Yolo::postprocess(const trt::MultiOutput &engineOutputs)
     {
+        const auto &inputDims = engine->getInputDims();
         const auto &outputDims = engine->getOutputDims();
         assert(outputDims.size() == 2);
+
+        cv::Size2f size(inputDims[0].d[2], inputDims[0].d[1]);
 
         auto numChannels = outputDims[0].d[1];
         auto numAnchors = outputDims[0].d[2];
@@ -46,7 +30,7 @@ namespace seg
 
         auto numClasses = numChannels - numMasks - 4; // 4 bbox
 
-        std::vector<cv::Rect> bboxes;
+        std::vector<cv::Rect2d> bboxes;
         bboxes.reserve(numAnchors);
 
         std::vector<float> scores;
@@ -75,19 +59,19 @@ namespace seg
             if (score < config.confidenceThreshold)
                 continue;
 
-            float x = *bboxesPtr++;
-            float y = *bboxesPtr++;
-            float w = *bboxesPtr++;
-            float h = *bboxesPtr++;
+            float xn = *bboxesPtr++;
+            float yn = *bboxesPtr++;
+            float wn = *bboxesPtr++;
+            float hn = *bboxesPtr++;
 
-            float x0 = std::clamp((x - 0.5f * w) * m_ratioWidth, 0.f, m_imgWidth);
-            float y0 = std::clamp((y - 0.5f * h) * m_ratioHeight, 0.f, m_imgHeight);
-            float x1 = std::clamp((x + 0.5f * w) * m_ratioWidth, 0.f, m_imgWidth);
-            float y1 = std::clamp((y + 0.5f * h) * m_ratioHeight, 0.f, m_imgHeight);
+            float x = std::clamp((xn - 0.5f * wn) / size.width, 0.f, 1.f);
+            float y = std::clamp((yn - 0.5f * hn) / size.height, 0.f, 1.f);
+            float w = std::clamp(wn / size.width, 0.f, 1.f);
+            float h = std::clamp(hn / size.height, 0.f, 1.f);
 
             cv::Mat maskWeight = cv::Mat(1, numMasks, CV_32F, maskWeightsPtr);
 
-            bboxes.emplace_back(cv::Rect2f(x0, y0, x1 - x0, y1 - y0));
+            bboxes.emplace_back(x, y, w, h);
             class_ids.emplace_back(class_id);
             scores.emplace_back(score);
             maskWeights.emplace_back(maskWeight);
@@ -124,8 +108,8 @@ namespace seg
 
             std::vector<cv::Mat> maskChannels;
             cv::split(maskScoreMap, maskChannels);
-            float maskScaleX = static_cast<float>(maskWidth) / m_imgWidth;
-            float maskScaleY = static_cast<float>(maskHeight) / m_imgHeight;
+            float maskScaleX = static_cast<float>(maskWidth);
+            float maskScaleY = static_cast<float>(maskHeight);
 
             // Process each mask
             for (size_t i = 0; i < indices.size(); i++)
@@ -138,12 +122,7 @@ namespace seg
 
                 // Ensure ROI stays within mask bounds
                 roi &= cv::Rect(0, 0, maskWidth, maskHeight);
-
-                // Extract and resize only the relevant portion
-                cv::Mat mask;
-                cv::Mat maskScaled = maskChannels[i](roi);
-                cv::resize(maskScaled, mask, detections[i].bbox.size(), cv::INTER_LINEAR);
-                detections[i].mask = mask > config.maskThreshold;
+                detections[i].mask = maskChannels[i](roi);
             }
         }
 

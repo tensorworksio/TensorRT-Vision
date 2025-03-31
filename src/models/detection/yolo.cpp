@@ -7,41 +7,25 @@ namespace det
 
     bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
     {
-        // These params will be used in the post-processing stage
-        // FIXME: This 4 values assume that images in a batch have the same size
-        // original_size must be stored in a datastructure
-        // Plan:
-        // preprocess return a Frame with original size stored + the processed image
-        // postprocess consumes network output + Frame
-        // postprocess returns a Frame
-
-        m_imgHeight = static_cast<float>(srcImg.rows);
-        m_imgWidth = static_cast<float>(srcImg.cols);
-        m_ratioHeight = m_imgHeight / static_cast<float>(size.height);
-        m_ratioWidth = m_imgWidth / static_cast<float>(size.width);
-
-        // The model expects RGB input
         cv::cvtColor(srcImg, dstImg, cv::COLOR_BGR2RGB);
-
-        // Resize the model to the expected size and pad with background
         dstImg = letterbox(dstImg, size, cv::Scalar(114, 114, 114), false, true, false, 32);
-
-        // Convert to Float32
         dstImg.convertTo(dstImg, CV_32FC3, 1.f / 255.f);
-
         return !dstImg.empty();
     }
 
     std::vector<Detection> Yolo::postprocess(const trt::SingleOutput &featureVector)
     {
+        const auto &inputDims = engine->getInputDims();
         const auto &outputDims = engine->getOutputDims();
         assert(outputDims.size() == 1);
+
+        cv::Size2f size(inputDims[0].d[2], inputDims[0].d[1]);
 
         auto numChannels = outputDims[0].d[1];
         auto numAnchors = outputDims[0].d[2];
         auto numClasses = numChannels - 4; // 4 bbox
 
-        std::vector<cv::Rect> bboxes;
+        std::vector<cv::Rect2d> bboxes;
         bboxes.reserve(numAnchors);
 
         std::vector<float> scores;
@@ -67,17 +51,17 @@ namespace det
                 continue;
             }
 
-            float x = *bboxesPtr++;
-            float y = *bboxesPtr++;
-            float w = *bboxesPtr++;
-            float h = *bboxesPtr;
+            float xn = *bboxesPtr++;
+            float yn = *bboxesPtr++;
+            float wn = *bboxesPtr++;
+            float hn = *bboxesPtr++;
 
-            float x0 = std::clamp((x - 0.5f * w) * m_ratioWidth, 0.f, m_imgWidth);
-            float y0 = std::clamp((y - 0.5f * h) * m_ratioHeight, 0.f, m_imgHeight);
-            float x1 = std::clamp((x + 0.5f * w) * m_ratioWidth, 0.f, m_imgWidth);
-            float y1 = std::clamp((y + 0.5f * h) * m_ratioHeight, 0.f, m_imgHeight);
+            float x = std::clamp((xn - 0.5f * wn) / size.width, 0.f, 1.f);
+            float y = std::clamp((yn - 0.5f * hn) / size.height, 0.f, 1.f);
+            float w = std::clamp(wn / size.width, 0.f, 1.f);
+            float h = std::clamp(hn / size.height, 0.f, 1.f);
 
-            bboxes.emplace_back(cv::Rect2f(x0, y0, x1 - x0, y1 - y0));
+            bboxes.emplace_back(x, y, w, h);
             class_ids.emplace_back(class_id);
             scores.emplace_back(score);
         }
@@ -104,14 +88,17 @@ namespace det
 
     std::vector<Detection> Yolov7::postprocess(const trt::SingleOutput &featureVector)
     {
+        const auto &inputDims = engine->getInputDims();
         const auto &outputDims = engine->getOutputDims();
         assert(outputDims.size() == 1);
+
+        cv::Size2f size(inputDims[0].d[2], inputDims[0].d[1]);
 
         auto numAnchors = outputDims[0].d[1];
         auto numChannels = outputDims[0].d[2];
         auto numClasses = numChannels - 5;
 
-        std::vector<cv::Rect> bboxes;
+        std::vector<cv::Rect2d> bboxes;
         bboxes.reserve(numAnchors);
 
         std::vector<float> scores;
@@ -137,17 +124,17 @@ namespace det
                 continue;
             }
 
-            float x = *bboxesPtr++;
-            float y = *bboxesPtr++;
-            float w = *bboxesPtr++;
-            float h = *bboxesPtr;
+            float xn = *bboxesPtr++;
+            float yn = *bboxesPtr++;
+            float wn = *bboxesPtr++;
+            float hn = *bboxesPtr++;
 
-            float x0 = std::clamp((x - 0.5f * w) * m_ratioWidth, 0.f, m_imgWidth);
-            float y0 = std::clamp((y - 0.5f * h) * m_ratioHeight, 0.f, m_imgHeight);
-            float x1 = std::clamp((x + 0.5f * w) * m_ratioWidth, 0.f, m_imgWidth);
-            float y1 = std::clamp((y + 0.5f * h) * m_ratioHeight, 0.f, m_imgHeight);
+            float x = std::clamp((xn - 0.5f * wn) / size.width, 0.f, 1.f);
+            float y = std::clamp((yn - 0.5f * hn) / size.height, 0.f, 1.f);
+            float w = std::clamp(wn / size.width, 0.f, 1.f);
+            float h = std::clamp(hn / size.height, 0.f, 1.f);
 
-            bboxes.emplace_back(cv::Rect2f(x0, y0, x1 - x0, y1 - y0));
+            bboxes.emplace_back(x, y, w, h);
             class_ids.emplace_back(class_id);
             scores.emplace_back(score);
         }

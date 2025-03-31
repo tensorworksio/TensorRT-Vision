@@ -2,7 +2,7 @@
 #include <fstream>
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
-#include <utils/detection_utils.hpp>
+#include <utils/geometry_utils.hpp>
 #include <models/reid/reid.hpp>
 
 namespace po = boost::program_options;

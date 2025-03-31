@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <atomic>
 
+#include <types/frame.hpp>
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
 #include <models/segmentation/factory.hpp>
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
         cv::namedWindow("Segmentations", cv::WINDOW_AUTOSIZE);
     }
 
-    cv::Mat frame;
+    Frame frame;
     signal(SIGINT, signalHandler);
 
     while (running)
@@ -90,33 +91,16 @@ int main(int argc, char *argv[])
             break;
 
         // Detect objects
-        auto detections = model->process(frame);
+        auto detections = model->process(frame.image);
 
-        // Draw masks
-        cv::Mat imageMask = cv::Mat::zeros(frame.rows, frame.cols, CV_8UC3);
-        for (const auto &det : detections)
-        {
-            if (det.mask.empty())
-                continue;
-
-            cv::Mat colorMask(det.mask.size(), CV_8UC3, det.getClassColor());
-            cv::Mat roiMask = imageMask(det.bbox);
-            colorMask.copyTo(roiMask, det.mask);
-
-            // Optionally draw bounding box and label
-            cv::rectangle(frame, det.bbox, det.getClassColor(), 2);
-            cv::putText(frame, det.class_name,
-                        cv::Point(det.bbox.x, det.bbox.y - 5),
-                        cv::FONT_HERSHEY_SIMPLEX, 0.5, det.getClassColor(), 2);
-        }
-        // Apply the final mask
-        cv::addWeighted(frame, 0.9, imageMask, 0.3, 0, frame);
+        // Draw detections
+        cv::Mat output = frame.draw(detections);
 
         if (display)
-            cv::imshow("Segmentations", frame);
+            cv::imshow("Detections", output);
 
         if (writer.isOpened())
-            writer.write(frame);
+            writer.write(output);
 
         if (cv::waitKey(1) == 27)
             running = false;

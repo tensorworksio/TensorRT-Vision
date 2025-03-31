@@ -5,6 +5,7 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <types/frame.hpp>
 #include <tracking/factory.hpp>
 #include <models/reid/reid.hpp>
 #include <models/detection/factory.hpp>
@@ -108,7 +109,7 @@ int main(int argc, char *argv[])
         cv::namedWindow("Multi Object Tracking", cv::WINDOW_AUTOSIZE);
     }
 
-    cv::Mat frame;
+    Frame frame;
     signal(SIGINT, signalHandler);
 
     while (running)
@@ -118,14 +119,14 @@ int main(int argc, char *argv[])
             break;
 
         // Detect objects
-        auto detections = detector->process(frame);
+        auto detections = detector->process(frame.image);
 
         // Extract features for each detection
         if (reidModel)
         {
             for (auto &det : detections)
             {
-                cv::Mat roi = frame(det.bbox);
+                cv::Mat roi = frame.image(det.bbox);
                 det.features = reidModel->process(roi);
             }
         }
@@ -134,30 +135,13 @@ int main(int argc, char *argv[])
         tracker->update(detections);
 
         // Visualize results
-        cv::Mat imageMask = cv::Mat::zeros(frame.rows, frame.cols, CV_8UC3);
-        for (const auto &det : detections)
-        {
-            cv::rectangle(frame, det.bbox, det.getTrackColor(), 2);
-            std::string label = det.class_name + " ID:" + std::to_string(det.id);
-            cv::putText(frame, label,
-                        cv::Point(det.bbox.x, det.bbox.y - 5),
-                        cv::FONT_HERSHEY_SIMPLEX, 0.5, det.getTrackColor(), 2);
-
-            if (!det.mask.empty())
-            {
-                cv::Mat colorMask(det.mask.size(), CV_8UC3, det.getClassColor());
-                cv::Mat roiMask = imageMask(det.bbox);
-                colorMask.copyTo(roiMask, det.mask);
-            }
-        }
-        // Apply the final mask
-        cv::addWeighted(frame, 0.9, imageMask, 0.3, 0, frame);
+        cv::Mat output = frame.draw(detections, true, true);
 
         if (display)
-            cv::imshow("Multi Object Tracking", frame);
+            cv::imshow("Multi Object Tracking", output);
 
         if (writer.isOpened())
-            writer.write(frame);
+            writer.write(output);
 
         if (cv::waitKey(1) == 27)
             running = false;
