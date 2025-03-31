@@ -75,7 +75,7 @@ namespace cls
         }
 
     protected:
-        bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
+        bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg) override;
         const ClassifierConfig config;
     };
 

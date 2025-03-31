@@ -98,7 +98,7 @@ namespace det
         const YoloConfig config;
 
     private:
-        bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
+        bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg) override;
         virtual std::vector<Detection> postprocess(const trt::SingleOutput &featureVector);
     };
 

@@ -86,35 +86,13 @@ namespace trt
     }
 
     template <typename OutputType, typename EngineOutput>
-    bool ModelProcessor<OutputType, EngineOutput>::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg)
-    {
-        // Single batch SISO preprocessing (SBSISO)
-        const auto &inputDims = engine->getInputDims();
-        assert(inputDims.size() == 1);
-
-        cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
-        return preprocess(srcImg, dstImg, size);
-    }
-
-    template <typename OutputType, typename EngineOutput>
     bool ModelProcessor<OutputType, EngineOutput>::preprocess(const std::vector<cv::Mat> &inputBatch, std::vector<cv::Mat> &outputBatch)
-    {
-        // Multi batch SISO preprocessing (MBSISO)
-        const auto &inputDims = engine->getInputDims();
-        assert(inputDims.size() == 1);
-
-        cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
-        return preprocess(inputBatch, outputBatch, size);
-    }
-
-    template <typename OutputType, typename EngineOutput>
-    bool ModelProcessor<OutputType, EngineOutput>::preprocess(const std::vector<cv::Mat> &inputBatch, std::vector<cv::Mat> &outputBatch, cv::Size size)
     {
         outputBatch.reserve(inputBatch.size());
         cv::Mat processedImage;
         for (const auto &image : inputBatch)
         {
-            if (!preprocess(image, processedImage, size))
+            if (!preprocess(image, processedImage))
             {
                 return false;
             }

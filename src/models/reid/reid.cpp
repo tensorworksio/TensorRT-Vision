@@ -5,17 +5,16 @@
 namespace reid
 {
 
-    bool ReId::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
+    bool ReId::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg)
     {
-        // The model expects RGB input
+        const auto &inputDims = engine->getInputDims();
+        assert(inputDims.size() == 1);
+
+        cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
+
         cv::cvtColor(srcImg, dstImg, cv::COLOR_BGR2RGB);
-
-        // Resize the model to the expected size and pad with background
         dstImg = letterbox(dstImg, size, cv::Scalar(114, 114, 114), false, true, false, 32);
-
-        // Convert to Float32
         dstImg.convertTo(dstImg, CV_32FC3, 1.f / 255.f);
-
         return !dstImg.empty();
     }
 

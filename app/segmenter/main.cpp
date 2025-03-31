@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
         cv::Mat output = frame.draw(detections);
 
         if (display)
-            cv::imshow("Detections", output);
+            cv::imshow("Segmentations", output);
 
         if (writer.isOpened())
             writer.write(output);

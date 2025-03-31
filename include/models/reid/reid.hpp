@@ -51,7 +51,7 @@ namespace reid
         const ReIdConfig &getConfig() const { return m_config; };
 
     protected:
-        bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
+        bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg) override;
         std::vector<float> postprocess(const trt::SingleOutput &featureVector) override;
 
     private:

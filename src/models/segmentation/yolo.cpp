@@ -4,9 +4,13 @@
 
 namespace seg
 {
-
-    bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size)
+    bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg)
     {
+        const auto &inputDims = engine->getInputDims();
+        assert(inputDims.size() == 1);
+
+        cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
+
         cv::cvtColor(srcImg, dstImg, cv::COLOR_BGR2RGB);
         cv::resize(dstImg, dstImg, size, 0, 0, cv::INTER_LINEAR);
         dstImg.convertTo(dstImg, CV_32FC3, 1.f / 255.f);

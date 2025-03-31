@@ -11,25 +11,17 @@ namespace trt
         ModelProcessor(const EngineConfig &config);
         virtual ~ModelProcessor() = default;
 
-        // Image inference
+        // Image & batch inference
         OutputType process(const cv::Mat &image);
-
-        // Batch inference
         std::vector<OutputType> process(const std::vector<cv::Mat> &imageBatch);
 
     private:
-        // Image preprocessing
-        bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg);
-        virtual bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) = 0;
-
-        // Batch preprocessing
+        // Image & batch preprocessing
+        virtual bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg) = 0;
         bool preprocess(const std::vector<cv::Mat> &inputBatch, std::vector<cv::Mat> &outputBatch);
-        bool preprocess(const std::vector<cv::Mat> &inputBatch, std::vector<cv::Mat> &outputBatch, cv::Size size);
 
-        // Image postprocessing
+        // Image & batch postprocessing
         virtual OutputType postprocess(const EngineOutput &featureVector) = 0;
-
-        // Batch postprocessing
         std::vector<OutputType> postprocess(const std::vector<EngineOutput> &featureBatch);
 
     protected:
