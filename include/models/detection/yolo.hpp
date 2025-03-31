@@ -96,10 +96,6 @@ namespace det
 
     protected:
         const YoloConfig config;
-        float m_ratioWidth = 1.f;
-        float m_ratioHeight = 1.f;
-        float m_imgWidth = 0.f;
-        float m_imgHeight = 0.f;
 
     private:
         bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;

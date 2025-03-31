@@ -21,7 +21,7 @@ namespace cls
             det.class_id = std::distance(featureVector.begin(), maxElement);
             det.confidence = *maxElement;
             det.class_name = getClassName(det.class_id);
-            det.labels.push_back(det.class_id);
+            det.labels[det.class_id] = det.class_name;
         }
         return det;
     }
@@ -37,7 +37,7 @@ namespace cls
                 continue;
 
             int class_id = static_cast<int>(i);
-            det.labels.push_back(class_id);
+            det.labels[det.class_id] = det.class_name;
 
             // Keep track of the highest confidence for the main detection fields
             if (featureVector[i] > maxConfidence)

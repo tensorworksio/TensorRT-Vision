@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <atomic>
 
+#include <types/frame.hpp>
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
 #include <models/detection/factory.hpp>
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
         cv::namedWindow("Detections", cv::WINDOW_AUTOSIZE);
     }
 
-    cv::Mat frame;
+    Frame frame;
     signal(SIGINT, signalHandler);
 
     while (running)
@@ -90,22 +91,16 @@ int main(int argc, char *argv[])
             break;
 
         // Detect objects
-        auto detections = model->process(frame);
+        auto detections = model->process(frame.image);
 
         // Draw detections
-        for (const auto &det : detections)
-        {
-            cv::rectangle(frame, det.bbox, det.getClassColor(), 2);
-            cv::putText(frame, det.class_name,
-                        cv::Point(det.bbox.x, det.bbox.y - 5),
-                        cv::FONT_HERSHEY_SIMPLEX, 0.5, det.getClassColor(), 2);
-        }
+        cv::Mat output = frame.draw(detections);
 
         if (display)
-            cv::imshow("Detections", frame);
+            cv::imshow("Detections", output);
 
         if (writer.isOpened())
-            writer.write(frame);
+            writer.write(output);
 
         if (cv::waitKey(1) == 27)
             running = false;

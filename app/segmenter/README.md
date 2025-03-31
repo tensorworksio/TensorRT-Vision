@@ -36,7 +36,6 @@ In `data` folder, add your `config.json`:
     "name": "yolov8",
     "confidence_threshold": 0.25,
     "nms_threshold": 0.45,
-    "mask_threshold": 0.5,
     "engine": {
       "model_path": "./data/yolov8n-seg.engine",
       "batch_size": 1,
@@ -59,7 +58,6 @@ In `data` folder, add your `config.json`:
     "name": "yolov11",
     "confidence_threshold": 0.25,
     "nms_threshold": 0.45,
-    "mask_threshold": 0.5,
     "engine": {
       "model_path": "./data/yolo11n-seg.engine",
       "batch_size": 1,

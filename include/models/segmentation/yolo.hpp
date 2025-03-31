@@ -68,8 +68,6 @@ namespace seg
                 confidenceThreshold = data["confidence_threshold"].get<float>();
             if (data.contains("nms_threshold"))
                 nmsThreshold = data["nms_threshold"].get<float>();
-            if (data.contains("mask_threshold"))
-                maskThreshold = data["mask_threshold"].get<float>();
             if (data.contains("nms_eta"))
                 nmsEta = data["nms_eta"].get<float>();
             if (data.contains("top_k"))
@@ -95,10 +93,6 @@ namespace seg
 
     protected:
         const YoloConfig config;
-        float m_ratioWidth = 1.f;
-        float m_ratioHeight = 1.f;
-        float m_imgWidth = 0.f;
-        float m_imgHeight = 0.f;
 
     private:
         bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg, cv::Size size) override;
