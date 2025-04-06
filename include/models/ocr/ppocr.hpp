@@ -11,7 +11,6 @@ namespace ocr
         trt::EngineConfig engine{};
         int topK = 1000;
         float maskThreshold = 0.5f;
-        float confidenceThreshold = 0.5f;
 
         void loadFromJson(const nlohmann::json &data) override
         {

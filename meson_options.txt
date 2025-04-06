@@ -1,1 +1,1 @@
-option('build_apps', type: 'array', choices: ['detector', 'reid', 'classifier', 'mot', 'segmenter'], value: ['detector', 'reid', 'classifier', 'mot', 'segmenter'], description: 'List of apps to build')
+option('build_apps', type: 'array', choices: ['detector', 'reid', 'classifier', 'mot', 'segmenter', 'ocr'], value: ['detector', 'reid', 'classifier', 'mot', 'segmenter', 'ocr'], description: 'List of apps to build')
