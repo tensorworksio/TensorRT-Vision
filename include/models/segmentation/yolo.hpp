@@ -79,11 +79,11 @@ namespace seg
         std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<YoloConfig>(*this); }
     };
 
-    class Yolo : public trt::Detector<trt::MultiOutput>
+    class Yolo : public trt::SIMODetector
     {
     public:
         Yolo(const YoloConfig &t_config)
-            : trt::Detector<trt::MultiOutput>(t_config.engine), config(t_config) {};
+            : trt::SIMODetector(t_config.engine), config(t_config) {};
         virtual ~Yolo() = default;
         const YoloConfig &getConfig() const { return config; };
         const std::string getClassName(int class_id) const

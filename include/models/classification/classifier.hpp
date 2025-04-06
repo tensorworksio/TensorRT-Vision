@@ -51,21 +51,11 @@ namespace cls
     };
 
     // Base classifier class
-    class BaseClassifier : public trt::ClassificationProcessor, public trt::SISOProcessor<Detection>
+    class BaseClassifier : public trt::SISOClassifier
     {
     public:
-        BaseClassifier(const ClassifierConfig &t_config) : trt::SISOProcessor<Detection>(t_config.engine), config(t_config) {}
+        BaseClassifier(const ClassifierConfig &t_config) : trt::SISOClassifier(t_config.engine), config(t_config) {}
         virtual ~BaseClassifier() = default;
-
-        Detection process(const cv::Mat &frame) override
-        {
-            return trt::SISOProcessor<Detection>::process(frame);
-        }
-
-        std::vector<Detection> process(const std::vector<cv::Mat> &frames) override
-        {
-            return trt::SISOProcessor<Detection>::process(frames);
-        }
 
         const ClassifierConfig &getConfig() const { return config; }
 

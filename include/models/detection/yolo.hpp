@@ -82,11 +82,11 @@ namespace det
         std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<YoloConfig>(*this); }
     };
 
-    class Yolo : public trt::Detector<trt::SingleOutput>
+    class Yolo : public trt::SISODetector
     {
     public:
         Yolo(const YoloConfig &t_config)
-            : trt::Detector<trt::SingleOutput>(t_config.engine), config(t_config) {};
+            : trt::SISODetector(t_config.engine), config(t_config) {};
         virtual ~Yolo() = default;
         const YoloConfig &getConfig() const { return config; };
         const std::string getClassName(int class_id) const

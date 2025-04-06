@@ -47,6 +47,24 @@ namespace trt
             return trt::ModelProcessor<std::vector<Detection>, EngineOutput>::process(frames);
         }
     };
+
+    template <typename EngineOutput>
+    class Classifier : public trt::ClassificationProcessor, public trt::ModelProcessor<Detection, EngineOutput>
+    {
+    public:
+        Classifier(const trt::EngineConfig &config)
+            : trt::ModelProcessor<Detection, EngineOutput>(config) {}
+
+        Detection process(const cv::Mat &frame) override
+        {
+            return trt::ModelProcessor<Detection, EngineOutput>::process(frame);
+        }
+
+        std::vector<Detection> process(const std::vector<cv::Mat> &frames) override
+        {
+            return trt::ModelProcessor<Detection, EngineOutput>::process(frames);
+        }
+    };
 } // namespace trt
 
 #include "processor.impl.hpp"
@@ -61,4 +79,10 @@ namespace trt
 
     template <typename OutputType>
     using SIMOProcessor = ModelProcessor<OutputType, MultiOutput>;
+
+    using SISODetector = Detector<SingleOutput>;
+    using SIMODetector = Detector<MultiOutput>;
+
+    using SISOClassifier = Classifier<SingleOutput>;
+    using SIMOClassifier = Classifier<MultiOutput>;
 }; // namespace trt
