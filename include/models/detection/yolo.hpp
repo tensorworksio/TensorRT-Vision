@@ -1,8 +1,8 @@
 #pragma once
 
+#include <engine/processor.hpp>
 #include <types/detection.hpp>
 #include <utils/json_utils.hpp>
-#include "detector.hpp"
 
 namespace det
 {
@@ -82,11 +82,11 @@ namespace det
         std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<YoloConfig>(*this); }
     };
 
-    class Yolo : public Detector<trt::SingleOutput>
+    class Yolo : public trt::Detector<trt::SingleOutput>
     {
     public:
         Yolo(const YoloConfig &t_config)
-            : Detector<trt::SingleOutput>(t_config.engine), config(t_config) {};
+            : trt::Detector<trt::SingleOutput>(t_config.engine), config(t_config) {};
         virtual ~Yolo() = default;
         const YoloConfig &getConfig() const { return config; };
         const std::string getClassName(int class_id) const

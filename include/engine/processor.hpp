@@ -1,6 +1,8 @@
 #pragma once
 
 #include "engine.hpp"
+#include "interface.hpp"
+#include <types/detection.hpp>
 
 namespace trt
 {
@@ -26,6 +28,24 @@ namespace trt
 
     protected:
         std::unique_ptr<Engine> engine = nullptr;
+    };
+
+    template <typename EngineOutput>
+    class Detector : public trt::DetectionProcessor, public trt::ModelProcessor<std::vector<Detection>, EngineOutput>
+    {
+    public:
+        Detector(const trt::EngineConfig &config)
+            : trt::ModelProcessor<std::vector<Detection>, EngineOutput>(config) {}
+
+        std::vector<Detection> process(const cv::Mat &frame) override
+        {
+            return trt::ModelProcessor<std::vector<Detection>, EngineOutput>::process(frame);
+        }
+
+        std::vector<std::vector<Detection>> process(const std::vector<cv::Mat> &frames) override
+        {
+            return trt::ModelProcessor<std::vector<Detection>, EngineOutput>::process(frames);
+        }
     };
 } // namespace trt
 
