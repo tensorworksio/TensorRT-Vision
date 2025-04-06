@@ -133,4 +133,4 @@ namespace seg
         return detections;
     }
 
-}
+} // namespace seg

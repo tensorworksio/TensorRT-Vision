@@ -4,6 +4,18 @@
 
 namespace trt
 {
+    class RawProcessor
+    {
+    public:
+        virtual ~RawProcessor() = default;
+
+        // Process a single frame to get raw output
+        virtual std::vector<float> process(const cv::Mat &frame) = 0;
+
+        // Process multiple frames to get batched raw output
+        virtual std::vector<std::vector<float>> process(const std::vector<cv::Mat> &frames) = 0;
+    };
+
     class DetectionProcessor
     {
     public:

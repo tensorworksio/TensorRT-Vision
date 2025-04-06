@@ -38,7 +38,8 @@ src_files = files(
   'src/models/classification/classifier.cpp',
   'src/models/detection/yolo.cpp',
   'src/models/reid/reid.cpp',
-  'src/models/segmentation/yolo.cpp'
+  'src/models/segmentation/yolo.cpp',
+  'src/models/ocr/ppocr.cpp'
 )
 
 # Include
