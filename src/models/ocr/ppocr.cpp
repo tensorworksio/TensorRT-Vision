@@ -33,11 +33,11 @@ namespace ocr
         std::vector<Detection> detections;
         detections.reserve(config.topK);
 
-        cv::Mat output = cv::Mat(outputDims[0].d[1], outputDims[0].d[2], CV_32F, const_cast<float *>(engineOutputs.data()));
-        output = output.t();
+        cv::Mat output = cv::Mat(outputDims[0].d[2], outputDims[0].d[3], CV_32F, const_cast<float *>(engineOutputs.data()));
 
         cv::Mat binaryMask;
-        cv::threshold(output, binaryMask, config.maskThreshold, 255, cv::THRESH_BINARY);
+        cv::threshold(output, binaryMask, config.maskThreshold, 1.0, cv::THRESH_BINARY);
+        binaryMask.convertTo(binaryMask, CV_8U); // Convert to 8-bit unsigned
 
         std::vector<std::vector<cv::Point>> contours;
         cv::findContours(binaryMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
@@ -45,12 +45,15 @@ namespace ocr
         for (const auto &contour : contours)
         {
             cv::Rect roi = cv::boundingRect(contour);
+            if (roi.area() < 100)
+                continue;
+
             cv::Rect2f bbox(static_cast<float>(roi.x) / size.width,
                             static_cast<float>(roi.y) / size.height,
                             static_cast<float>(roi.width) / size.width,
                             static_cast<float>(roi.height) / size.height);
 
-            detections.emplace_back(Detection{-1, 1.0f, bbox, "text", binaryMask(roi)});
+            detections.emplace_back(Detection{-1, 1.0f, bbox, "text", output(roi)});
         }
 
         return detections;

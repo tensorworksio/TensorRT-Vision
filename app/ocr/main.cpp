@@ -46,42 +46,6 @@ int main(int argc, char *argv[])
     ocr::PPOCRV3Detector detector(config);
     std::vector<Detection> detections = detector.process(frame.image);
 
-    // Prepare output
-    nlohmann::json output = {
-        {"status", "success"},
-        {"data", nlohmann::json::array()}};
-
-    for (const auto &det : detections)
-    {
-        output["data"].push_back({{"bbox", {{"x", det.bbox.x}, {"y", det.bbox.y}, {"width", det.bbox.width}, {"height", det.bbox.height}}},
-                                  {"confidence", det.confidence}});
-    }
-
-    // Output results
-    if (vm.count("output"))
-    {
-        std::string outputPath = vm["output"].as<std::string>();
-        std::ofstream outFile(outputPath);
-        if (outFile.is_open())
-        {
-            outFile << output.dump(2) << std::endl;
-            outFile.close();
-        }
-        else
-        {
-            nlohmann::json error = {
-                {"status", "error"},
-                {"message", "Could not create output file"}};
-            std::cerr << error.dump() << std::endl;
-            return 1;
-        }
-    }
-    else
-    {
-        // Write to stdout if no output file specified
-        std::cout << output.dump(2) << std::endl;
-    }
-
     // Display image if requested
     if (vm["display"].as<bool>())
     {
