@@ -241,14 +241,14 @@ namespace trt
         }
 
         // Ensure the batch size does not exceed the max
-        if (inputs[0].size() > static_cast<size_t>(m_options.maxBatchSize))
+        const auto batchSize = static_cast<int32_t>(inputs[0].size());
+        if (batchSize > m_options.maxBatchSize)
         {
             m_logger.log(NvLogger::Severity::kERROR, "The batch size is larger than the model expects!");
-            m_logger.log(NvLogger::Severity::kERROR, "Expected batch of size {}, got {}", m_options.maxBatchSize, inputs[0].size());
+            m_logger.log(NvLogger::Severity::kERROR, "Expected batch of size {}, got {}", m_options.maxBatchSize, batchSize);
             return false;
         }
 
-        const auto batchSize = static_cast<int32_t>(inputs[0].size());
         // Make sure the same batch size was provided for all inputs
         for (size_t i = 1; i < inputs.size(); ++i)
         {

@@ -52,3 +52,6 @@ Each app has its own README with detailed instructions:
 
 This project builds upon foundations from:
 - [tensorrt-cpp-api](https://github.com/cyrusbehr/tensorrt-cpp-api) - A C++ TensorRT wrapper
+
+## TODO
+- we never remove the padding of letterbox when we scale back to original image size

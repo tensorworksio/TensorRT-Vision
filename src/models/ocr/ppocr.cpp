@@ -10,11 +10,25 @@ namespace ocr
         assert(inputDims.size() == 1);
 
         cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
-
         cv::cvtColor(srcImg, dstImg, cv::COLOR_BGR2RGB);
 
-        // Official PPOCRv3 preprocessing steps
         cv::resize(dstImg, dstImg, size, 0, 0, cv::INTER_LINEAR);
+        dstImg.convertTo(dstImg, CV_32FC3, 1.f / 255.f);
+        cv::subtract(dstImg, cv::Scalar(0.485, 0.456, 0.406), dstImg);
+        cv::divide(dstImg, cv::Scalar(0.229, 0.224, 0.225), dstImg);
+
+        return !dstImg.empty();
+    }
+
+    bool PPOCRV3Recognizer::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg)
+    {
+        const auto &inputDims = engine->getInputDims();
+        assert(inputDims.size() == 1);
+
+        cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
+        cv::cvtColor(srcImg, dstImg, cv::COLOR_BGR2RGB);
+
+        dstImg = letterbox(dstImg, size, cv::Scalar(114, 114, 114), false, true, false, 32);
         dstImg.convertTo(dstImg, CV_32FC3, 1.f / 255.f);
         cv::subtract(dstImg, cv::Scalar(0.485, 0.456, 0.406), dstImg);
         cv::divide(dstImg, cv::Scalar(0.229, 0.224, 0.225), dstImg);
@@ -57,5 +71,16 @@ namespace ocr
         }
 
         return detections;
+    }
+
+    std::string PPOCRV3Recognizer::postprocess(const trt::SingleOutput &featureVector)
+    {
+        const auto &inputDims = engine->getInputDims();
+        const auto &outputDims = engine->getOutputDims();
+        assert(outputDims.size() == 1);
+        std::cout << inputDims[0].d[2] << "x" << inputDims[0].d[3] << std::endl;
+        std::size_t featureVectorSize = featureVector.size();
+        std::cout << featureVectorSize << std::endl;
+        return "";
     }
 } // namespace ocr
