@@ -47,15 +47,12 @@ int main(int argc, char *argv[])
     ocr::PPOCRV3Recognizer recognizer(config);
     std::vector<Detection> detections = detector.process(frame.image);
 
-    std::vector<cv::Mat> rois;
     for (const auto &detection : detections)
     {
         auto roi = frame(detection.bbox);
-        std::cout << roi.size() << std::endl;
-        rois.push_back(roi);
+        auto text = recognizer.process(roi);
+        std::cout << text << std::endl;
     }
-
-    std::vector<std::string> texts = recognizer.process(rois);
 
     // Display image if requested
     if (vm["display"].as<bool>())

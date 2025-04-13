@@ -12,7 +12,8 @@ namespace ocr
         trt::EngineConfig recognizer{};
         int topK = 1000;
         float maskThreshold = 0.5f;
-
+        int minArea = 100;
+        std::string vocabulary{};
         void loadFromJson(const nlohmann::json &data) override
         {
             if (data.contains("detector"))
@@ -23,6 +24,10 @@ namespace ocr
                 topK = data["top_k"].get<int>();
             if (data.contains("mask_threshold"))
                 maskThreshold = data["mask_threshold"].get<float>();
+            if (data.contains("min_area"))
+                minArea = data["min_area"].get<int>();
+            if (data.contains("vocabulary"))
+                vocabulary = data["vocabulary"].get<std::string>();
         }
 
         std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<PPOCRConfig>(*this); }

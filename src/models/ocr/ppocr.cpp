@@ -59,7 +59,7 @@ namespace ocr
         for (const auto &contour : contours)
         {
             cv::Rect roi = cv::boundingRect(contour);
-            if (roi.area() < 100)
+            if (roi.area() < config.minArea)
                 continue;
 
             cv::Rect2f bbox(static_cast<float>(roi.x) / size.width,
@@ -75,12 +75,22 @@ namespace ocr
 
     std::string PPOCRV3Recognizer::postprocess(const trt::SingleOutput &featureVector)
     {
-        const auto &inputDims = engine->getInputDims();
         const auto &outputDims = engine->getOutputDims();
         assert(outputDims.size() == 1);
-        std::cout << inputDims[0].d[2] << "x" << inputDims[0].d[3] << std::endl;
-        std::size_t featureVectorSize = featureVector.size();
-        std::cout << featureVectorSize << std::endl;
-        return "";
+
+        auto seqLen = outputDims[0].d[1];
+        auto numClasses = outputDims[0].d[2];
+        cv::Mat output = cv::Mat(numClasses, seqLen, CV_32F, const_cast<float *>(featureVector.data()));
+        output = output.t();
+
+        std::string result = "";
+        for (auto t = 0; t < seqLen; ++t)
+        {
+            auto rowPtr = output.row(t).ptr<float>();
+            auto maxElement = std::max_element(rowPtr, rowPtr + numClasses);
+            auto maxIndex = std::distance(rowPtr, maxElement);
+            result += config.vocabulary[maxIndex];
+        }
+        return result;
     }
 } // namespace ocr
