@@ -43,26 +43,10 @@ int main(int argc, char *argv[])
     config.loadFromJson(nlohmann::json::parse(std::ifstream(configPath)));
 
     // Process image
-    ocr::PPOCRV3Detector detector(config);
     ocr::PPOCRV3Recognizer recognizer(config);
-    std::vector<Detection> detections = detector.process(frame.image);
+    auto text = recognizer.process(frame.image);
 
-    for (const auto &detection : detections)
-    {
-        auto roi = frame(detection.bbox);
-        auto text = recognizer.process(roi);
-        std::cout << text << std::endl;
-    }
-
-    // Display image if requested
-    if (vm["display"].as<bool>())
-    {
-        cv::Mat output = frame.draw(detections);
-
-        cv::namedWindow("OCR Detection Result", cv::WINDOW_AUTOSIZE);
-        cv::imshow("OCR Detection Result", output);
-        cv::waitKey(0);
-    }
+    std::cout << text << std::endl;
 
     return 0;
 }
