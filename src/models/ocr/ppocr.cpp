@@ -9,10 +9,40 @@ namespace ocr
         const auto &inputDims = engine->getInputDims();
         assert(inputDims.size() == 1);
 
-        cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
+        // Store original size for postprocessing
+        original_size_ = srcImg.size();
+        cv::Size target_size(inputDims[0].d[2], inputDims[0].d[1]);
+
+        // Convert to RGB
         cv::cvtColor(srcImg, dstImg, cv::COLOR_BGR2RGB);
 
-        cv::resize(dstImg, dstImg, size, 0, 0, cv::INTER_LINEAR);
+        // Calculate letterbox parameters
+        float scale = std::min(
+            static_cast<float>(target_size.height) / srcImg.rows,
+            static_cast<float>(target_size.width) / srcImg.cols);
+
+        cv::Size unpadded_size(
+            std::round(srcImg.cols * scale),
+            std::round(srcImg.rows * scale));
+
+        // Store padding info for postprocessing
+        padding_.scale = scale;
+        padding_.offset = cv::Point2f(
+            (target_size.width - unpadded_size.width) / 2.0f,
+            (target_size.height - unpadded_size.height) / 2.0f);
+
+        // Resize maintaining aspect ratio
+        cv::resize(dstImg, dstImg, unpadded_size, 0, 0, cv::INTER_LINEAR);
+
+        // Add padding
+        cv::Mat padded = cv::Mat(target_size, dstImg.type(), cv::Scalar(114, 114, 114));
+        cv::Rect roi(
+            padding_.offset.x, padding_.offset.y,
+            dstImg.cols, dstImg.rows);
+        dstImg.copyTo(padded(roi));
+        dstImg = padded;
+
+        // Normalize
         dstImg.convertTo(dstImg, CV_32FC3, 1.f / 255.f);
         cv::subtract(dstImg, cv::Scalar(0.485, 0.456, 0.406), dstImg);
         cv::divide(dstImg, cv::Scalar(0.229, 0.224, 0.225), dstImg);
@@ -59,41 +89,80 @@ namespace ocr
 
     std::vector<Detection> PPOCRV3Detector::postprocess(const trt::SingleOutput &engineOutputs)
     {
-        const auto &inputDims = engine->getInputDims();
         const auto &outputDims = engine->getOutputDims();
         assert(outputDims.size() == 1);
-
-        cv::Size2f size(inputDims[0].d[2], inputDims[0].d[1]);
 
         std::vector<Detection> detections;
         detections.reserve(config.topK);
 
-        cv::Mat output = cv::Mat(outputDims[0].d[2], outputDims[0].d[3], CV_32F, const_cast<float *>(engineOutputs.data()));
+        cv::Mat output = cv::Mat(outputDims[0].d[2], outputDims[0].d[3], CV_32F,
+                                 const_cast<float *>(engineOutputs.data()));
 
+        // Try different thresholding approaches
         cv::Mat binaryMask;
-        cv::threshold(output, binaryMask, config.maskThreshold, 1.0, cv::THRESH_BINARY);
-        binaryMask.convertTo(binaryMask, CV_8U); // Convert to 8-bit unsigned
+        cv::threshold(output, binaryMask, config.maskThreshold, 255, cv::THRESH_BINARY);
+        binaryMask.convertTo(binaryMask, CV_8U);
+
+        // Optional: Apply morphological operations to connect nearby text regions
+        cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+        cv::morphologyEx(binaryMask, binaryMask, cv::MORPH_CLOSE, kernel);
 
         std::vector<std::vector<cv::Point>> contours;
-        cv::findContours(binaryMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+        // Try RETR_LIST instead of RETR_EXTERNAL to catch all contours
+        cv::findContours(binaryMask, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
 
         for (const auto &contour : contours)
         {
-            cv::Rect roi = cv::boundingRect(contour);
+            // Use minAreaRect to better handle rotated text
+            cv::RotatedRect rotatedRect = cv::minAreaRect(contour);
+            cv::Rect roi = rotatedRect.boundingRect(); // Get the upright bounding rect
+
+            // Filter small noise but with a smaller threshold
             if (roi.area() < config.minArea)
                 continue;
 
-            cv::Rect2f bbox(static_cast<float>(roi.x) / size.width,
-                            static_cast<float>(roi.y) / size.height,
-                            static_cast<float>(roi.width) / size.width,
-                            static_cast<float>(roi.height) / size.height);
+            // Ensure ROI stays within bounds
+            roi &= cv::Rect(0, 0, output.cols, output.rows);
 
-            detections.emplace_back(Detection{-1, 1.0f, bbox, "text", output(roi)});
+            // Remove padding and scale back to original image coordinates
+            float x = (roi.x - padding_.offset.x) / padding_.scale;
+            float y = (roi.y - padding_.offset.y) / padding_.scale;
+            float w = roi.width / padding_.scale;
+            float h = roi.height / padding_.scale;
+
+            // Normalize to [0,1] range
+            x /= original_size_.width;
+            y /= original_size_.height;
+            w /= original_size_.width;
+            h /= original_size_.height;
+
+            // Ensure normalized coordinates are within [0,1]
+            x = std::clamp(x, 0.0f, 1.0f);
+            y = std::clamp(y, 0.0f, 1.0f);
+            w = std::clamp(w, 0.0f, 1.0f - x);
+            h = std::clamp(h, 0.0f, 1.0f - y);
+
+            cv::Rect2f bbox(x, y, w, h);
+
+            // Calculate confidence based on average mask value in ROI
+            cv::Mat roiMask = output(roi);
+            float confidence = static_cast<float>(cv::mean(roiMask)[0]);
+
+            detections.emplace_back(Detection{-1, confidence, bbox, "text", output(roi)});
+        }
+
+        // Sort by confidence if needed
+        if (!detections.empty())
+        {
+            std::sort(detections.begin(), detections.end(),
+                      [](const Detection &a, const Detection &b)
+                      {
+                          return a.confidence > b.confidence;
+                      });
         }
 
         return detections;
     }
-
     std::string PPOCRV3Recognizer::postprocess(const trt::SingleOutput &featureVector)
     {
         const auto &outputDims = engine->getOutputDims();

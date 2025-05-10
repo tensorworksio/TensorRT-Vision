@@ -33,7 +33,7 @@ namespace ocr
             {
                 vocabulary = data["vocabulary"].get<std::vector<std::string>>();
                 vocabulary.insert(vocabulary.begin(), ""); // Add blank label
-                vocabulary.insert(vocabulary.end(), "?");  // Unknown label
+                vocabulary.insert(vocabulary.end(), " ");  // Unknown label
             }
         }
 
@@ -53,6 +53,15 @@ namespace ocr
     private:
         bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg) override;
         std::vector<Detection> postprocess(const trt::SingleOutput &engineOutputs) override;
+
+        struct PaddingInfo
+        {
+            float scale;
+            cv::Point2f offset;
+        };
+
+        cv::Size original_size_;
+        PaddingInfo padding_;
     };
 
     class PPOCRV3Recognizer : public trt::SISOProcessor<std::string>
