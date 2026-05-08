@@ -11,8 +11,6 @@ namespace reid
         trt::EngineConfig engine{};
         float confidenceThreshold = 0.5f;
 
-        std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<ReIdConfig>(*this); }
-
         void loadFromJson(const nlohmann::json &data) override
         {
             if (data.contains("engine"))
@@ -24,7 +22,7 @@ namespace reid
         static ReIdConfig load(const std::string &filename, const std::string &task = "")
         {
             std::ifstream file(filename);
-            auto data = nlohmann::json::parse(file);
+            auto data = nlohmann::json::parse(file, nullptr, true, true);
 
             ReIdConfig config;
             if (task.empty())

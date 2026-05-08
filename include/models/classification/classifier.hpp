@@ -21,14 +21,16 @@ namespace cls
                 engine.loadFromJson(data["engine"]);
             if (data.contains("confidence_threshold"))
                 confidenceThreshold = data["confidence_threshold"].get<float>();
-            if (data.contains("class_names"))
+            if (data.contains("class_names_file"))
+                classNames = loadClassNamesFromFile(data["class_names_file"].get<std::string>());
+            else if (data.contains("class_names"))
                 classNames = data["class_names"].get<std::vector<std::string>>();
         }
 
         static ClassifierConfig load(const std::string &filename, const std::string &task = "")
         {
             std::ifstream file(filename);
-            auto data = nlohmann::json::parse(file);
+            auto data = nlohmann::json::parse(file, nullptr, true, true);
 
             ClassifierConfig config;
             if (task.empty())
@@ -47,7 +49,6 @@ namespace cls
             return config;
         }
 
-        std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<ClassifierConfig>(*this); }
     };
 
     // Base classifier class

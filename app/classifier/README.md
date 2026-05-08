@@ -18,7 +18,8 @@ trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16
 ```
 
 ## Configure
-In `data` folder, add your `config.json`:
+In `data` folder, add your `config.json`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
+
 ```json
 {
   "engine": {
@@ -27,9 +28,11 @@ In `data` folder, add your `config.json`:
     "precision": 16
   },
   "confidence_threshold": 0.5,
-  "class_names": ["class1", "class2"]
+  "class_names_file": "./data/classes.txt"
 }
 ```
+
+Config files support `//` and `/* */` comments.
 
 ## Compile
 ```shell
@@ -52,3 +55,4 @@ cd build/app/classifier
 # in root directory
 cd build/app/classifier
 ./classify -i image.jpg -c data/config.json | jq .data.class_name
+```

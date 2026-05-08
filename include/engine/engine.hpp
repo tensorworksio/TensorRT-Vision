@@ -34,8 +34,6 @@ namespace trt
         int batchSize = 1;
         Precision precision = Precision::FP16;
 
-        std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<EngineConfig>(*this); }
-
         void loadFromJson(const nlohmann::json &data) override
         {
             if (data.contains("model_path"))

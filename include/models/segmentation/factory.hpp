@@ -53,7 +53,7 @@ namespace seg
         static std::unique_ptr<trt::DetectionProcessor> create(const std::string &config_file)
         {
             std::ifstream file(config_file);
-            auto data = nlohmann::json::parse(file);
+            auto data = nlohmann::json::parse(file, nullptr, true, true);
             ModelType model = getModelType(data["segmenter"]["architecture"]);
 
             switch (model)

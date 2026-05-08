@@ -25,7 +25,8 @@ trtexec --onnx=data/yolo11n-seg.onnx --saveEngine=data/yolo11n-seg.engine --fp16
 ```
 
 ## Configure
-In `data` folder, add your `config.json`:
+In `data` folder, add your `config.json`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
+
 <details>
     <summary>YOLOv8</summary>
 
@@ -41,9 +42,7 @@ In `data` folder, add your `config.json`:
       "batch_size": 1,
       "precision": 16
     },
-    "class_names": [
-      // fill in the class names
-    ]
+    "class_names_file": "./data/coco.txt"
   }
 }
 ```
@@ -63,13 +62,13 @@ In `data` folder, add your `config.json`:
       "batch_size": 1,
       "precision": 16
     },
-    "class_names": [
-      // fill in the class names
-    ]
+    "class_names_file": "./data/coco.txt"
   }
 }
 ```
 </details>
+
+Config files support `//` and `/* */` comments.
 
 ## Compile
 ```shell

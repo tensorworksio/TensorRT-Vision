@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fstream>
 #include <types/detection.hpp>
 #include <utils/json_utils.hpp>
 #include "segmenter.hpp"
@@ -72,11 +73,11 @@ namespace seg
                 nmsEta = data["nms_eta"].get<float>();
             if (data.contains("top_k"))
                 topK = data["top_k"].get<int>();
-            if (data.contains("class_names"))
+            if (data.contains("class_names_file"))
+                classNames = loadClassNamesFromFile(data["class_names_file"].get<std::string>());
+            else if (data.contains("class_names"))
                 classNames = data["class_names"].get<std::vector<std::string>>();
         }
-
-        std::shared_ptr<const JsonConfig> clone() const override { return std::make_shared<YoloConfig>(*this); }
     };
 
     class Yolo : public Segmenter<trt::MultiOutput>

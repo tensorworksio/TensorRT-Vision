@@ -12,37 +12,35 @@ Multiple Object Tracking (MOT) using TensorRT for optimized inference. Supports 
 2. [Optional] [ReId](../reid/README.md)
 
 ## Configure
-In `data` folder, add your `config.json`:
+In `data` folder, add your `config.json`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array. Config files support `//` and `/* */` comments.
 
 <details open>
     <summary>SORT + detector</summary>
 
 ```json
 {
-"tracker": {
+  "tracker": {
     "name": "sort",
     "kalman": {
-        "time_step": 1,
-        "process_noise_scale": 1.0,
-        "measurement_noise_scale": 1.0
+      "time_step": 1,
+      "process_noise_scale": 1.0,
+      "measurement_noise_scale": 1.0
     },
     "max_time_lost": 15,
     "match_thresh": 0.3
-},
-"detector": {
+  },
+  "detector": {
     "architecture": "yolo",
     "name": "yolov11",
     "confidence_threshold": 0.25,
     "nms_threshold": 0.45,
     "engine": {
-        "model_path": "./data/yolo11n.engine",
-        "batch_size": 1,
-        "precision": 16
+      "model_path": "./data/yolo11n.engine",
+      "batch_size": 1,
+      "precision": 16
     },
-    "class_names": [
-        // fill in the class names
-    ]
-}
+    "class_names_file": "./data/coco.txt"
+  }
 }
 ```
 </details>
@@ -51,30 +49,28 @@ In `data` folder, add your `config.json`:
 
 ```json
 {
-"tracker": {
+  "tracker": {
     "name": "sort",
     "kalman": {
-        "time_step": 1,
-        "process_noise_scale": 1.0,
-        "measurement_noise_scale": 1.0
+      "time_step": 1,
+      "process_noise_scale": 1.0,
+      "measurement_noise_scale": 1.0
     },
     "max_time_lost": 15,
     "match_thresh": 0.3
-},
-"segmenter": {
+  },
+  "segmenter": {
     "architecture": "yolo",
     "name": "yolov11",
     "confidence_threshold": 0.25,
     "nms_threshold": 0.45,
     "engine": {
-        "model_path": "./data/yolo11n-seg.engine",
-        "batch_size": 1,
-        "precision": 16
+      "model_path": "./data/yolo11n-seg.engine",
+      "batch_size": 1,
+      "precision": 16
     },
-    "class_names": [
-        // fill in the class names
-    ]
-}
+    "class_names_file": "./data/coco.txt"
+  }
 }
 ```
 </details>
@@ -84,12 +80,12 @@ In `data` folder, add your `config.json`:
 
 ```json
 {
-"tracker": {
+  "tracker": {
     "name": "botsort",
     "kalman": {
-            "time_step": 1,
-            "process_noise_scale": 1.0,
-            "measurement_noise_scale": 1.0
+      "time_step": 1,
+      "process_noise_scale": 1.0,
+      "measurement_noise_scale": 1.0
     },
     "max_time_lost": 15,
     "track_high_thresh": 0.5,
@@ -100,28 +96,27 @@ In `data` folder, add your `config.json`:
     "unconfirmed_match_thresh": 0.2,
     "proximity_thresh": 0.5,
     "appearance_thresh": 0.9
-},
-"reid": {
+  },
+  "reid": {
     "engine": {
-            "model_path": "./data/osnet_x0_25.engine",
-            "batch_size": 1,
-            "precision": 16
+      "model_path": "./data/osnet_x0_25.engine",
+      "batch_size": 1,
+      "precision": 16
     },
     "confidence_threshold": 0.8
-},
-"detector": {
+  },
+  "detector": {
+    "architecture": "yolo",
     "name": "yolov11",
     "confidence_threshold": 0.25,
     "nms_threshold": 0.45,
     "engine": {
-            "model_path": "./data/yolo11n.engine",
-            "batch_size": 1,
-            "precision": 16
+      "model_path": "./data/yolo11n.engine",
+      "batch_size": 1,
+      "precision": 16
     },
-    "class_names": [
-        // fill in the class names
-    ]
-}
+    "class_names_file": "./data/coco.txt"
+  }
 }
 ```
 </details>
