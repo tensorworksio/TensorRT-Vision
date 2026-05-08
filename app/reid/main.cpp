@@ -1,5 +1,7 @@
 #include <string>
 #include <fstream>
+#include <print>
+#include <sstream>
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
 #include <utils/geometry_utils.hpp>
@@ -22,7 +24,9 @@ int main(int argc, char *argv[])
 
     if (vm.count("help"))
     {
-        std::cout << options << "\n";
+        std::ostringstream oss;
+        oss << options;
+        std::println("{}", oss.str());
         return 1;
     }
 
@@ -33,7 +37,7 @@ int main(int argc, char *argv[])
     cv::Mat queryImage = cv::imread(queryPath, cv::IMREAD_COLOR);
     if (queryImage.empty())
     {
-        std::cerr << "Error: Could not load query image " << queryPath << std::endl;
+        std::println(stderr, "Error: Could not load query image {}", queryPath);
         return 1;
     }
 
@@ -42,7 +46,7 @@ int main(int argc, char *argv[])
     cv::Mat keyImage = cv::imread(keyPath, cv::IMREAD_COLOR);
     if (keyImage.empty())
     {
-        std::cerr << "Error: Could not load key image " << keyPath << std::endl;
+        std::println(stderr, "Error: Could not load key image {}", keyPath);
         return 1;
     }
 
@@ -81,14 +85,13 @@ int main(int argc, char *argv[])
             nlohmann::json error = {
                 {"status", "error"},
                 {"message", "Could not create output file"}};
-            std::cerr << error.dump() << std::endl;
+            std::println(stderr, "{}", error.dump());
             return 1;
         }
     }
     else
     {
-        // Write to stdout if no output file specified
-        std::cout << output.dump() << std::endl;
+        std::println("{}", output.dump());
     }
 
     // Display image if requested

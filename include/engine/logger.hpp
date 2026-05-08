@@ -49,29 +49,30 @@ namespace trt
         }
 
         template <typename... Args>
-        void log(Severity severity, const char *fmt, const Args &...args) noexcept
+        void log(Severity severity, const char *format, const Args &...args) noexcept
         {
             if (severity > level)
             {
                 return;
             }
+            auto rf = SPDLOG_FMT_RUNTIME(format);
             switch (severity)
             {
             case Severity::kINTERNAL_ERROR:
             case Severity::kERROR:
-                m_logger->error(fmt, args...);
+                m_logger->error(rf, args...);
                 break;
             case Severity::kWARNING:
-                m_logger->warn(fmt, args...);
+                m_logger->warn(rf, args...);
                 break;
             case Severity::kINFO:
-                m_logger->info(fmt, args...);
+                m_logger->info(rf, args...);
                 break;
             case Severity::kVERBOSE:
-                m_logger->debug(fmt, args...);
+                m_logger->debug(rf, args...);
                 break;
             default:
-                m_logger->trace(fmt, args...);
+                m_logger->trace(rf, args...);
                 break;
             }
         }

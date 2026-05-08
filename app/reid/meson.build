@@ -2,22 +2,19 @@ src = files(
     'main.cpp'
 )
 
-# Define data directory
 data_dir = 'data'
-build_data_dir = meson.current_build_dir() / 'data'
 
-# Create data directories
-run_command('mkdir', '-p', build_data_dir, check: false)
-run_command('mkdir', '-p', 
-    meson.current_source_dir() / data_dir, 
-    check: false
-)
+run_command('mkdir', '-p', meson.current_source_dir() / data_dir, check: false)
 
 custom_target('reid-data',
-    output: 'data',
-    command: ['cp', '-r', 
+    output: '.reid-data-stamp',
+    command: [
+        'sh', '-c',
+        'mkdir -p "$1" && cp -rT "$2" "$1" && touch "$3"',
+        'sh',
+        meson.current_build_dir() / data_dir,
         meson.current_source_dir() / data_dir,
-        meson.current_build_dir()
+        '@OUTPUT@'
     ],
     build_by_default: true
 )

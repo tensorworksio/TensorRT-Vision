@@ -1,7 +1,7 @@
 project('TensorRT-Vision', 'cpp',
         version : '0.2',
         default_options : [
-          'cpp_std=c++17',
+          'cpp_std=c++23',
           'warning_level=3',
           'werror=true'
         ]
@@ -19,7 +19,8 @@ boost_dep = dependency('boost',
   modules: ['filesystem', 'program_options', 'json']
 )
 opencv_dep = dependency('opencv4',
-  modules: ['core', 'highgui', 'imgproc', 'imgcodecs', 'video', 'videoio']
+  modules: ['core', 'highgui', 'imgproc', 'imgcodecs', 'video', 'videoio'],
+  include_type: 'system'
 )
 
 tensorrt_include_dir = '/usr/include'

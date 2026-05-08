@@ -1,6 +1,8 @@
 #include <string>
 #include <signal.h>
 #include <atomic>
+#include <print>
+#include <sstream>
 #include <boost/program_options.hpp>
 
 #include <opencv2/opencv.hpp>
@@ -35,7 +37,9 @@ int main(int argc, char *argv[])
 
     if (vm.count("help"))
     {
-        std::cout << options << "\n";
+        std::ostringstream oss;
+        oss << options;
+        std::println("{}", oss.str());
         return 1;
     }
 
@@ -54,7 +58,7 @@ int main(int argc, char *argv[])
     }
     if (!cap.isOpened())
     {
-        std::cerr << "Error: Could not open video source " << inputPath << std::endl;
+        std::println(stderr, "Error: Could not open video source {}", inputPath);
         return 1;
     }
 
@@ -97,7 +101,7 @@ int main(int argc, char *argv[])
         writer.open(outputPath, fourcc, fps, frameSize);
         if (!writer.isOpened())
         {
-            std::cerr << "Error: Could not create output video " << outputPath << std::endl;
+            std::println(stderr, "Error: Could not create output video {}", outputPath);
             return 1;
         }
     }
