@@ -1,10 +1,10 @@
 #include <fstream>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include "engine/engine.hpp"
 #include "utils/cuda_utils.hpp"
 #include "utils/tensorrt_utils.hpp"
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace trt
 {

@@ -2,29 +2,17 @@ src = files(
     'main.cpp'
 )
 
-# Define data directory
 data_dir = 'data'
-build_data_dir = meson.current_build_dir() / 'data'
 
-# Create data directories
-run_command('mkdir', '-p', build_data_dir, check: false)
-run_command('mkdir', '-p', 
-    meson.current_source_dir() / data_dir, 
-    check: false
-)
+run_command('mkdir', '-p', meson.current_source_dir() / data_dir, check: false)
+run_command('rm', '-f', meson.current_build_dir() / data_dir, check: true)
+run_command('ln', '-s', meson.current_source_dir() / data_dir, meson.current_build_dir() / data_dir, check: true)
 
-custom_target('detector-data',
-    output: 'data',
-    command: ['cp', '-r', 
-        meson.current_source_dir() / data_dir,
-        meson.current_build_dir()
-    ],
-    build_by_default: true
-)
+argparse_dep = dependency('argparse', required: true)
 
 executable('detect',
     src,
-    dependencies: [engine_dep],
+    dependencies: [engine_dep, argparse_dep],
     include_directories: include_directories('.'),
     install: true
 )

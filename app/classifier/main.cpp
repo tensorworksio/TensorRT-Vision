@@ -1,44 +1,41 @@
 #include <string>
 #include <fstream>
+#include <print>
+#include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
-#include <boost/program_options.hpp>
 #include <types/detection.hpp>
 #include <models/classification/classifier.hpp>
 
-namespace po = boost::program_options;
-
 int main(int argc, char *argv[])
 {
-    po::options_description options("Program options");
-    options.add_options()("help,h", "Show help message");
-    options.add_options()("input,i", po::value<std::string>()->required(), "Input image");
-    options.add_options()("config,c", po::value<std::string>(), "Path to model config.json");
-    options.add_options()("display,d", po::bool_switch(), "Display image with results");
-    options.add_options()("output,o", po::value<std::string>(), "Output text file for results");
+    argparse::ArgumentParser program("classify");
+    program.add_argument("-i", "--input").required().help("Input image");
+    program.add_argument("-c", "--config").required().help("Path to model config.json");
+    program.add_argument("-d", "--display").flag().help("Display image with results");
+    program.add_argument("-o", "--output").help("Output text file for results");
 
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, options), vm);
-
-    if (vm.count("help"))
+    try
     {
-        std::cout << options << "\n";
+        program.parse_args(argc, argv);
+    }
+    catch (const std::exception &e)
+    {
+        std::println(stderr, "{}", e.what());
+        std::println(stderr, "{}", program.help().str());
         return 1;
     }
 
-    po::notify(vm);
-
     // Input
-    std::string imagePath = vm["input"].as<std::string>();
+    auto imagePath = program.get<std::string>("--input");
     cv::Mat image = cv::imread(imagePath, cv::IMREAD_COLOR);
     if (image.empty())
     {
-        std::cerr << "Error: Could not load image " << imagePath << std::endl;
+        std::println(stderr, "Error: Could not load image {}", imagePath);
         return 1;
     }
 
     // Config
-    std::string configPath = vm["config"].as<std::string>();
-    auto config = cls::ClassifierConfig::load(configPath);
+    auto config = cls::ClassifierConfig::load(program.get<std::string>("--config"));
 
     // Process image
     cls::SingleLabelClassifier classifier(config);
@@ -49,32 +46,26 @@ int main(int argc, char *argv[])
         {"status", "success"},
         {"data", {{"class_id", det.class_id}, {"class_name", det.class_name}, {"confidence", det.confidence}}}};
 
-    if (vm.count("output"))
+    if (auto outputPath = program.present<std::string>("--output"))
     {
-        std::string outputPath = vm["output"].as<std::string>();
-        std::ofstream outFile(outputPath);
+        std::ofstream outFile(*outputPath);
         if (outFile.is_open())
         {
-            outFile << output.dump() << std::endl;
-            outFile.close();
+            outFile << output.dump() << "\n";
         }
         else
         {
-            nlohmann::json error = {
-                {"status", "error"},
-                {"message", "Could not create output file"}};
-            std::cerr << error.dump() << std::endl;
+            nlohmann::json error = {{"status", "error"}, {"message", "Could not create output file"}};
+            std::println(stderr, "{}", error.dump());
             return 1;
         }
     }
     else
     {
-        // Write to stdout if no output file specified
-        std::cout << output.dump() << std::endl;
+        std::println("{}", output.dump());
     }
 
-    // Display image if requested
-    if (vm["display"].as<bool>())
+    if (program.get<bool>("--display"))
     {
         cv::putText(image,
                     det.class_name + " (" + std::to_string(det.confidence) + ")",

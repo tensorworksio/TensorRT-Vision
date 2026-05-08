@@ -1,1 +1,2 @@
 option('build_apps', type: 'array', choices: ['detector', 'reid', 'classifier', 'mot', 'segmenter'], value: ['detector', 'reid', 'classifier', 'mot', 'segmenter'], description: 'List of apps to build')
+option('tensorrt_prefix', type: 'string', value: '', description: 'TensorRT installation prefix (empty = use system paths)')

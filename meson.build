@@ -1,7 +1,7 @@
 project('TensorRT-Vision', 'cpp',
         version : '0.2',
         default_options : [
-          'cpp_std=c++17',
+          'cpp_std=c++23',
           'warning_level=3',
           'werror=true'
         ]
@@ -15,22 +15,27 @@ vision_core_dep = vision_core_proj.get_variable('vision_core_dep')
 cuda_dep = dependency('cuda')
 spdlog_dep = dependency('spdlog')
 json_dep = dependency('nlohmann_json')
-boost_dep = dependency('boost', 
-  modules: ['filesystem', 'program_options', 'json']
-)
 opencv_dep = dependency('opencv4',
-  modules: ['core', 'highgui', 'imgproc', 'imgcodecs', 'video', 'videoio']
+  modules: ['core', 'highgui', 'imgproc', 'imgcodecs', 'video', 'videoio'],
+  include_type: 'system'
 )
 
-tensorrt_include_dir = '/usr/include'
-tensorrt_lib_dir = '/usr/lib/x86_64-linux-gnu'
+_trt_prefix = get_option('tensorrt_prefix')
+if _trt_prefix != ''
+  tensorrt_include_dir = _trt_prefix / 'include'
+  tensorrt_lib_dir     = _trt_prefix / 'lib'
+else
+  _arch = host_machine.cpu_family() == 'aarch64' ? 'aarch64-linux-gnu' : 'x86_64-linux-gnu'
+  tensorrt_include_dir = '/usr/include'
+  tensorrt_lib_dir     = '/usr/lib' / _arch
+endif
 
 tensorrt_dep = declare_dependency(
   include_directories : [tensorrt_include_dir],
   link_args : ['-L' + tensorrt_lib_dir, '-lnvinfer', '-lnvinfer_plugin', '-lcudart']
 )
 
-dependencies = [boost_dep, opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, vision_core_dep]
+dependencies = [opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, vision_core_dep]
 
 # Source files
 src_files = files(

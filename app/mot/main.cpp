@@ -1,17 +1,15 @@
 #include <string>
+#include <fstream>
 #include <signal.h>
 #include <atomic>
-#include <boost/program_options.hpp>
-
+#include <print>
+#include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
-
 #include <types/frame.hpp>
 #include <tracking/factory.hpp>
 #include <models/reid/reid.hpp>
 #include <models/detection/factory.hpp>
 #include <models/segmentation/factory.hpp>
-
-namespace po = boost::program_options;
 
 std::atomic<bool> running{true};
 
@@ -22,47 +20,43 @@ void signalHandler([[maybe_unused]] int signum)
 
 int main(int argc, char *argv[])
 {
-    po::options_description options("Program options");
-    options.add_options()("help,h", "Show help message");
-    options.add_options()("input,i", po::value<std::string>()->required(), "Input video file or camera index (0,1,...)");
-    options.add_options()("config,c", po::value<std::string>(), "Path to model config.json");
-    options.add_options()("reid", po::bool_switch(), "Activate ReId");
-    options.add_options()("output,o", po::value<std::string>(), "Output video file");
-    options.add_options()("display,d", po::bool_switch(), "Display video frames");
+    argparse::ArgumentParser program("mot");
+    program.add_argument("-i", "--input").required().help("Input video file or camera index (0,1,...)");
+    program.add_argument("-c", "--config").required().help("Path to model config.json");
+    program.add_argument("--reid").flag().help("Activate ReId");
+    program.add_argument("-o", "--output").help("Output video file");
+    program.add_argument("-d", "--display").flag().help("Display video frames");
 
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, options), vm);
-
-    if (vm.count("help"))
+    try
     {
-        std::cout << options << "\n";
+        program.parse_args(argc, argv);
+    }
+    catch (const std::exception &e)
+    {
+        std::println(stderr, "{}", e.what());
+        std::println(stderr, "{}", program.help().str());
         return 1;
     }
 
-    po::notify(vm);
-
     // Input
-    std::string inputPath = vm["input"].as<std::string>();
+    auto inputPath = program.get<std::string>("--input");
     cv::VideoCapture cap;
     if (inputPath.size() == 1 && std::isdigit(inputPath[0]))
-    {
         cap.open(std::stoi(inputPath));
-    }
     else
-    {
         cap.open(inputPath);
-    }
+
     if (!cap.isOpened())
     {
-        std::cerr << "Error: Could not open video source " << inputPath << std::endl;
+        std::println(stderr, "Error: Could not open video source {}", inputPath);
         return 1;
     }
 
     // Load config
-    std::string configPath = vm["config"].as<std::string>();
+    auto configPath = program.get<std::string>("--config");
     std::ifstream file(configPath);
     auto config = nlohmann::json::parse(file);
-    bool reid = vm["reid"].as<bool>() && config.contains("reid");
+    bool reid = program.get<bool>("--reid") && config.contains("reid");
     bool segment = config.contains("segmenter");
 
     // Load tracker & model
@@ -77,37 +71,28 @@ int main(int argc, char *argv[])
 
     std::unique_ptr<trt::DetectionProcessor> detector = nullptr;
     if (segment)
-    {
         detector = seg::SegmenterFactory::create(configPath);
-    }
     else
-    {
         detector = det::DetectorFactory::create(configPath);
-    }
 
     // Output
     cv::VideoWriter writer;
-    if (vm.count("output"))
+    if (auto outputPath = program.present<std::string>("--output"))
     {
-        std::string outputPath = vm["output"].as<std::string>();
         int fourcc = cv::VideoWriter::fourcc('m', 'p', '4', 'v');
         double fps = cap.get(cv::CAP_PROP_FPS);
-        cv::Size frameSize(cap.get(cv::CAP_PROP_FRAME_WIDTH),
-                           cap.get(cv::CAP_PROP_FRAME_HEIGHT));
-        writer.open(outputPath, fourcc, fps, frameSize);
+        cv::Size frameSize(cap.get(cv::CAP_PROP_FRAME_WIDTH), cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+        writer.open(*outputPath, fourcc, fps, frameSize);
         if (!writer.isOpened())
         {
-            std::cerr << "Error: Could not create output video " << outputPath << std::endl;
+            std::println(stderr, "Error: Could not create output video {}", *outputPath);
             return 1;
         }
     }
 
-    // Display
-    bool display = vm["display"].as<bool>() || !vm.count("output");
+    bool display = program.get<bool>("--display") || !program.is_used("--output");
     if (display)
-    {
         cv::namedWindow("Multi Object Tracking", cv::WINDOW_AUTOSIZE);
-    }
 
     Frame frame;
     signal(SIGINT, signalHandler);
@@ -118,10 +103,8 @@ int main(int argc, char *argv[])
         if (frame.empty())
             break;
 
-        // Detect objects
         auto detections = detector->process(frame.image);
 
-        // Extract features for each detection
         if (reidModel)
         {
             for (auto &det : detections)
@@ -131,10 +114,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Update tracker
         tracker->update(detections);
-
-        // Visualize results
         cv::Mat output = frame.draw(detections, true, true);
 
         if (display)
@@ -147,7 +127,6 @@ int main(int argc, char *argv[])
             running = false;
     }
 
-    // Cleanup
     if (cap.isOpened())
         cap.release();
 
