@@ -20,8 +20,15 @@ opencv_dep = dependency('opencv4',
   include_type: 'system'
 )
 
-tensorrt_include_dir = '/usr/include'
-tensorrt_lib_dir = '/usr/lib/x86_64-linux-gnu'
+_trt_prefix = get_option('tensorrt_prefix')
+if _trt_prefix != ''
+  tensorrt_include_dir = _trt_prefix / 'include'
+  tensorrt_lib_dir     = _trt_prefix / 'lib'
+else
+  _arch = host_machine.cpu_family() == 'aarch64' ? 'aarch64-linux-gnu' : 'x86_64-linux-gnu'
+  tensorrt_include_dir = '/usr/include'
+  tensorrt_lib_dir     = '/usr/lib' / _arch
+endif
 
 tensorrt_dep = declare_dependency(
   include_directories : [tensorrt_include_dir],
