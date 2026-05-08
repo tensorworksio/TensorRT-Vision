@@ -15,6 +15,10 @@ namespace trt
         OutputType process(const cv::Mat &image);
         std::vector<OutputType> process(const std::vector<cv::Mat> &imageBatch);
 
+    protected:
+        const std::vector<nvinfer1::Dims3> &inputDims()  const { return engine->getInputDims(); }
+        const std::vector<nvinfer1::Dims>  &outputDims() const { return engine->getOutputDims(); }
+
     private:
         // Image & batch preprocessing
         virtual bool preprocess(const cv::Mat &srcImg, cv::Mat &dstImg) = 0;
@@ -24,7 +28,6 @@ namespace trt
         virtual OutputType postprocess(const EngineOutput &featureVector) = 0;
         std::vector<OutputType> postprocess(const std::vector<EngineOutput> &featureBatch);
 
-    protected:
         std::unique_ptr<Engine> engine = nullptr;
     };
 } // namespace trt

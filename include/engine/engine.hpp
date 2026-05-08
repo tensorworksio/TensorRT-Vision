@@ -55,20 +55,20 @@ namespace trt
         // Clear memory
         void clearBuffers();
         // Load and prepare engine for inference
-        bool loadNetwork(const std::string &engineModelPath);
+        void loadNetwork(const std::string &engineModelPath);
         // Load inputs to CUDA memory
-        bool prepareInputs(const std::vector<std::vector<cv::Mat>> &inputs, cudaStream_t &inferenceCudaStream, const int32_t batchSize);
+        void prepareInputs(const std::vector<std::vector<cv::Mat>> &inputs, cudaStream_t &inferenceCudaStream, const int32_t batchSize);
         // Copy the outputs back to CPU
-        bool prepareOutputs(std::vector<std::vector<std::vector<float>>> &outputs, cudaStream_t &inferenceCudaStream, const int32_t batchSize);
+        void prepareOutputs(std::vector<std::vector<std::vector<float>>> &outputs, cudaStream_t &inferenceCudaStream, const int32_t batchSize);
 
         // Run inference
         // Input format: [input][batch][cv::Mat]
         // Output format: [batch][output][feature_vector]
-        bool runInference(const cv::Mat &image, std::vector<float> &featureVector);                                                // SBSISO
-        bool runInference(const cv::Mat &image, std::vector<std::vector<float>> &outputs);                                         // SBSIMO
-        bool runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<float>> &outputBatch);                   // MBSISO
-        bool runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<std::vector<float>>> &outputBatch);      // MBSIMO
-        bool runInference(const std::vector<std::vector<cv::Mat>> &inputs, std::vector<std::vector<std::vector<float>>> &outputs); // MBMIMO
+        void runInference(const cv::Mat &image, std::vector<float> &featureVector);                                                // SBSISO
+        void runInference(const cv::Mat &image, std::vector<std::vector<float>> &outputs);                                         // SBSIMO
+        void runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<float>> &outputBatch);                   // MBSISO
+        void runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<std::vector<float>>> &outputBatch);      // MBSIMO
+        void runInference(const std::vector<std::vector<cv::Mat>> &inputs, std::vector<std::vector<std::vector<float>>> &outputs); // MBMIMO
 
         [[nodiscard]] const EngineOptions &getOptions() const { return m_options; };
         [[nodiscard]] const std::vector<nvinfer1::Dims3> &getInputDims() const { return m_inputDims; };
@@ -90,7 +90,7 @@ namespace trt
         const EngineOptions m_options;
     };
 
-    bool loadEngine(Engine &engine, const std::string &engineModelPath);
+    void loadEngine(Engine &engine, const std::string &engineModelPath);
     void setEngineOptions(EngineOptions &options, int batchSize, Precision precision);
 
 } // namespace trt

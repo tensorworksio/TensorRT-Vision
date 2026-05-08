@@ -7,11 +7,10 @@ namespace reid
 
     bool ReId::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg)
     {
-        const auto &inputDims = engine->getInputDims();
-        if (inputDims.size() != 1)
-            throw std::runtime_error("ReId expects exactly 1 input tensor, got " + std::to_string(inputDims.size()));
+        if (inputDims().size() != 1)
+            throw std::runtime_error("ReId expects exactly 1 input tensor, got " + std::to_string(inputDims().size()));
 
-        cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
+        cv::Size size(inputDims()[0].d[2], inputDims()[0].d[1]);
 
         cv::cvtColor(srcImg, dstImg, cv::COLOR_BGR2RGB);
         dstImg = letterbox(dstImg, size, cv::Scalar(114, 114, 114), false, true, false, 32);

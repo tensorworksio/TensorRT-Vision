@@ -33,14 +33,11 @@ namespace trt
         m_IOTensorNames.clear();
     }
 
-    bool Engine::loadNetwork(const std::string &engineModelPath)
+    void Engine::loadNetwork(const std::string &engineModelPath)
     {
         // Read serialized model from disk
         if (!fs::exists(engineModelPath))
-        {
-            m_logger.log(NvLogger::Severity::kERROR, "{} does not exist", engineModelPath);
-            return false;
-        }
+            throw std::runtime_error("Engine model not found: " + engineModelPath);
 
         std::ifstream file(engineModelPath, std::ios::binary | std::ios::ate);
         std::streamsize size = file.tellg();
@@ -48,18 +45,12 @@ namespace trt
 
         std::vector<char> buffer(size);
         if (!file.read(buffer.data(), size))
-        {
-            m_logger.log(NvLogger::Severity::kERROR, "Failed to read engine model from disk");
-            return false;
-        }
+            throw std::runtime_error("Failed to read engine model from disk: " + engineModelPath);
 
         // Create a runtime
         m_runtime = std::unique_ptr<nvinfer1::IRuntime>(nvinfer1::createInferRuntime(m_logger));
         if (!m_runtime)
-        {
-            m_logger.log(NvLogger::Severity::kERROR, "Failed to create InferRuntime");
-            return false;
-        }
+            throw std::runtime_error("Failed to create InferRuntime");
 
         // Set device
         cuda::checkCudaErrorCode(cudaSetDevice(m_options.deviceIndex));
@@ -67,18 +58,12 @@ namespace trt
         // Create engine
         m_engine = std::unique_ptr<nvinfer1::ICudaEngine>(m_runtime->deserializeCudaEngine(buffer.data(), buffer.size()));
         if (!m_engine)
-        {
-            m_logger.log(NvLogger::Severity::kERROR, "Failed to deserialize engine");
-            return false;
-        }
+            throw std::runtime_error("Failed to deserialize engine: " + engineModelPath);
 
         // Create execution context
         m_context = std::unique_ptr<nvinfer1::IExecutionContext>(m_engine->createExecutionContext());
         if (!m_context)
-        {
-            m_logger.log(NvLogger::Severity::kERROR, "Failed to create execution context");
-            return false;
-        }
+            throw std::runtime_error("Failed to create execution context");
 
         // Create CUDA stream
         cudaStream_t stream;
@@ -97,10 +82,7 @@ namespace trt
             m_IOTensorNames.emplace_back(tensorName);
 
             if (tensorDataType != nvinfer1::DataType::kFLOAT)
-            {
-                m_logger.log(NvLogger::Severity::kERROR, "Only FLOAT32 is supported for inputs/outputs");
-                return false;
-            }
+                throw std::runtime_error("Only FLOAT32 is supported for inputs/outputs");
 
             if (tensorType == nvinfer1::TensorIOMode::kINPUT)
             {
@@ -124,19 +106,16 @@ namespace trt
             }
             else
             {
-                m_logger.log(NvLogger::Severity::kERROR, "IO Tensor {} is neither kINPUT nor kOUTPUT", tensorName);
-                return false;
+                throw std::runtime_error(std::string("IO tensor is neither kINPUT nor kOUTPUT: ") + tensorName);
             }
         }
 
         // Synchronize and destroy the CUDA stream
         cuda::checkCudaErrorCode(cudaStreamSynchronize(stream));
         cuda::checkCudaErrorCode(cudaStreamDestroy(stream));
-
-        return true;
     }
 
-    bool Engine::prepareInputs(const std::vector<std::vector<cv::Mat>> &inputs, cudaStream_t &inferenceCudaStream, const int32_t batchSize)
+    void Engine::prepareInputs(const std::vector<std::vector<cv::Mat>> &inputs, cudaStream_t &inferenceCudaStream, const int32_t batchSize)
     {
         const auto numInputs = m_inputDims.size();
 
@@ -147,13 +126,11 @@ namespace trt
 
             auto &input = inputBatch[0];
             if (input.channels() != dims.d[0] || input.rows != dims.d[1] || input.cols != dims.d[2])
-            {
-                m_logger.log(NvLogger::Severity::kERROR, "Input does not have correct size!");
-                m_logger.log(NvLogger::Severity::kERROR, "Expected: ({}, {}, {})", dims.d[0], dims.d[1], dims.d[2]);
-                m_logger.log(NvLogger::Severity::kERROR, "Got: ({}, {}, {})", input.channels(), input.rows, input.cols);
-                m_logger.log(NvLogger::Severity::kERROR, "Ensure you resize your input image to the correct size.");
-                return false;
-            }
+                throw std::runtime_error(
+                    "Input size mismatch: expected (" +
+                    std::to_string(dims.d[0]) + ", " + std::to_string(dims.d[1]) + ", " + std::to_string(dims.d[2]) +
+                    "), got (" +
+                    std::to_string(input.channels()) + ", " + std::to_string(input.rows) + ", " + std::to_string(input.cols) + ")");
 
             nvinfer1::Dims4 inputDims = {batchSize, dims.d[0], dims.d[1], dims.d[2]};
             // TODO: Separate m_InputTensor and m_OutputTensors
@@ -165,151 +142,94 @@ namespace trt
             cuda::checkCudaErrorCode(cudaMemcpyAsync(
                 m_buffers[i], dataPointer, mfloat.cols * mfloat.rows * mfloat.channels() * sizeof(float), cudaMemcpyHostToDevice, inferenceCudaStream));
         }
-        return true;
     }
 
-    bool Engine::runInference(const cv::Mat &image, std::vector<float> &featureVector)
+    void Engine::runInference(const cv::Mat &image, std::vector<float> &featureVector)
     {
         // Single batch SISO inference (SBSISO)
         std::vector<cv::Mat> input_batch(1, image);
-
-        // Call MBSISO
         std::vector<std::vector<float>> output_batch;
-        bool success = runInference(input_batch, output_batch);
-
-        // Extract the feature vector from the MBSISO output
-        if (success)
-            featureVector = output_batch[0];
-        return success;
+        runInference(input_batch, output_batch);
+        featureVector = output_batch[0];
     }
 
-    bool Engine::runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<float>> &outputBatch)
+    void Engine::runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<float>> &outputBatch)
     {
         // Multi batch SISO inference (MBSISO)
         std::vector<std::vector<cv::Mat>> inputs(1, inputBatch);
-
-        // Call MBMIMO
         std::vector<std::vector<std::vector<float>>> outputs;
-        bool success = runInference(inputs, outputs);
-
-        // Extract the first output batch from the MIMO result
-        if (success)
-            std::transform(
-                outputs.begin(), outputs.end(), std::back_inserter(outputBatch), [](const std::vector<std::vector<float>> &output)
-                { return output.front(); });
-        return success;
+        runInference(inputs, outputs);
+        std::transform(outputs.begin(), outputs.end(), std::back_inserter(outputBatch),
+                       [](const std::vector<std::vector<float>> &output) { return output.front(); });
     }
 
-    bool Engine::runInference(const cv::Mat &image, std::vector<std::vector<float>> &outputs)
+    void Engine::runInference(const cv::Mat &image, std::vector<std::vector<float>> &outputs)
     {
         // Single batch SIMO inference (SBSIMO)
         std::vector<cv::Mat> input_batch(1, image);
-
-        // Call MBSIMO
         std::vector<std::vector<std::vector<float>>> output_batch;
-        bool success = runInference(input_batch, output_batch);
-        if (success)
-        {
-            outputs = output_batch[0];
-        }
-        return success;
+        runInference(input_batch, output_batch);
+        outputs = output_batch[0];
     }
 
-    bool Engine::runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<std::vector<float>>> &outputBatch)
+    void Engine::runInference(const std::vector<cv::Mat> &inputBatch, std::vector<std::vector<std::vector<float>>> &outputBatch)
     {
         // Multi batch SIMO inference (MBSIMO)
         std::vector<std::vector<cv::Mat>> inputs(1, inputBatch);
-        bool success = runInference(inputs, outputBatch);
-        return success;
+        runInference(inputs, outputBatch);
     }
 
-    bool Engine::runInference(const std::vector<std::vector<cv::Mat>> &inputs, std::vector<std::vector<std::vector<float>>> &outputs)
+    void Engine::runInference(const std::vector<std::vector<cv::Mat>> &inputs, std::vector<std::vector<std::vector<float>>> &outputs)
     {
         // Multi batch MIMO inference (MBMIMO)
         if (inputs.empty() || inputs[0].empty())
-        {
-            m_logger.log(NvLogger::Severity::kERROR, "Provided input vector is empty!");
-            return false;
-        }
+            throw std::runtime_error("Provided input vector is empty");
 
         const auto numInputs = m_inputDims.size();
         if (inputs.size() != numInputs)
-        {
-            m_logger.log(NvLogger::Severity::kERROR, "Incorrect number of inputs provided!");
-            m_logger.log(NvLogger::Severity::kERROR, "Expected {} inputs, got {}", numInputs, inputs.size());
-            return false;
-        }
+            throw std::runtime_error("Incorrect number of inputs: expected " +
+                                     std::to_string(numInputs) + ", got " + std::to_string(inputs.size()));
 
-        // Ensure the batch size does not exceed the max
         if (inputs[0].size() > static_cast<size_t>(m_options.maxBatchSize))
-        {
-            m_logger.log(NvLogger::Severity::kERROR, "The batch size is larger than the model expects!");
-            m_logger.log(NvLogger::Severity::kERROR, "Expected batch of size {}, got {}", m_options.maxBatchSize, inputs[0].size());
-            return false;
-        }
+            throw std::runtime_error("Batch size " + std::to_string(inputs[0].size()) +
+                                     " exceeds max batch size " + std::to_string(m_options.maxBatchSize));
 
         const auto batchSize = static_cast<int32_t>(inputs[0].size());
-        // Make sure the same batch size was provided for all inputs
         for (size_t i = 1; i < inputs.size(); ++i)
         {
             if (inputs[i].size() != static_cast<size_t>(batchSize))
-            {
-                m_logger.log(NvLogger::Severity::kERROR, "The batch size needs to be constant for all inputs!");
-                m_logger.log(NvLogger::Severity::kERROR, "Expected batch of size {}, got {}", m_options.maxBatchSize, inputs[i].size());
-                return false;
-            }
+                throw std::runtime_error("Inconsistent batch sizes across inputs");
         }
 
-        // Create the cuda stream that will be used for inference
         cudaStream_t inferenceCudaStream;
         cuda::checkCudaErrorCode(cudaStreamCreate(&inferenceCudaStream));
 
-        // Load inputs to CUDA memory
-        if (!prepareInputs(inputs, inferenceCudaStream, batchSize))
-        {
-            return false;
-        }
+        prepareInputs(inputs, inferenceCudaStream, batchSize);
 
-        // Ensure all dynamic bindings have been defined
         if (!m_context->allInputDimensionsSpecified())
-        {
-            throw std::runtime_error("Error, not all required dimensions specified.");
-        }
+            throw std::runtime_error("Not all required input dimensions specified");
 
-        // Set the address of the input and output buffers
         for (size_t i = 0; i < m_buffers.size(); ++i)
         {
             if (!m_context->setTensorAddress(m_IOTensorNames[i].c_str(), m_buffers[i]))
-            {
-                return false;
-            }
+                throw std::runtime_error("Failed to set tensor address for: " + m_IOTensorNames[i]);
         }
 
-        // Run inference
         if (!m_context->enqueueV3(inferenceCudaStream))
-        {
-            return false;
-        }
+            throw std::runtime_error("Failed to run inference");
 
-        // Copy the outputs back to CPU
-        if (!prepareOutputs(outputs, inferenceCudaStream, batchSize))
-        {
-            return false;
-        }
+        prepareOutputs(outputs, inferenceCudaStream, batchSize);
 
-        // Synchronize the cuda stream
         cuda::checkCudaErrorCode(cudaStreamSynchronize(inferenceCudaStream));
         cuda::checkCudaErrorCode(cudaStreamDestroy(inferenceCudaStream));
-        return true;
     }
 
-    bool Engine::prepareOutputs(std::vector<std::vector<std::vector<float>>> &outputs, cudaStream_t &inferenceCudaStream, const int32_t batchSize)
+    void Engine::prepareOutputs(std::vector<std::vector<std::vector<float>>> &outputs, cudaStream_t &inferenceCudaStream, const int32_t batchSize)
     {
         outputs.clear();
         const auto numInputs = m_inputDims.size();
         for (int batch = 0; batch < batchSize; ++batch)
         {
-            // Batch
             std::vector<std::vector<float>> batchOutputs{};
             for (int32_t outputBinding = numInputs; outputBinding < m_engine->getNbIOTensors(); ++outputBinding)
             {
@@ -318,7 +238,6 @@ namespace trt
                 std::vector<float> output;
                 auto outputLength = m_outputLengths[outputBinding - numInputs];
                 output.resize(outputLength);
-                // Copy the output
                 cuda::checkCudaErrorCode(cudaMemcpyAsync(output.data(),
                                                          static_cast<char *>(m_buffers[outputBinding]) + (batch * sizeof(float) * outputLength),
                                                          outputLength * sizeof(float),
@@ -328,18 +247,11 @@ namespace trt
             }
             outputs.emplace_back(std::move(batchOutputs));
         }
-        return true;
     }
 
-    bool loadEngine(Engine &engine, const std::string &engineModelPath)
+    void loadEngine(Engine &engine, const std::string &engineModelPath)
     {
-        bool success;
-        success = engine.loadNetwork(engineModelPath);
-        if (!success)
-        {
-            throw std::runtime_error("Unable to load TRT engine");
-        }
-        return success;
+        engine.loadNetwork(engineModelPath);
     }
 
     void setEngineOptions(EngineOptions &options, int batchSize, Precision precision)

@@ -33,10 +33,7 @@ namespace trt
         {
             throw std::runtime_error("Model preprocessing failed");
         }
-        if (!engine->runInference(processedImage, featureVector))
-        {
-            throw std::runtime_error("Model inference failed");
-        }
+        engine->runInference(processedImage, featureVector);
         return postprocess(featureVector);
     }
 
@@ -73,10 +70,7 @@ namespace trt
         {
             const size_t batchSize = std::min(maxBatchSize, processedBatch.size() - i);
             images = vector_ops::slice(processedBatch, i, i + batchSize);
-            if (!engine->runInference(images, features))
-            {
-                throw std::runtime_error("Batched model inference failed");
-            }
+            engine->runInference(images, features);
             featureBatch.insert(featureBatch.end(),
                                 std::make_move_iterator(features.begin()),
                                 std::make_move_iterator(features.end()));

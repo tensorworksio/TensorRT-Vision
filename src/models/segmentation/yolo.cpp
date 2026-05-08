@@ -6,11 +6,10 @@ namespace seg
 {
     bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg)
     {
-        const auto &inputDims = engine->getInputDims();
-        if (inputDims.size() != 1)
-            throw std::runtime_error("Yolo segmenter expects exactly 1 input tensor, got " + std::to_string(inputDims.size()));
+        if (inputDims().size() != 1)
+            throw std::runtime_error("Yolo segmenter expects exactly 1 input tensor, got " + std::to_string(inputDims().size()));
 
-        cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
+        cv::Size size(inputDims()[0].d[2], inputDims()[0].d[1]);
 
         cv::cvtColor(srcImg, dstImg, cv::COLOR_BGR2RGB);
         cv::resize(dstImg, dstImg, size, 0, 0, cv::INTER_LINEAR);
@@ -20,19 +19,19 @@ namespace seg
 
     std::vector<Detection> Yolo::postprocess(const trt::MultiOutput &engineOutputs)
     {
-        const auto &inputDims = engine->getInputDims();
-        const auto &outputDims = engine->getOutputDims();
-        if (outputDims.size() != 2)
-            throw std::runtime_error("Yolo segmenter expects exactly 2 output tensors, got " + std::to_string(outputDims.size()));
+        const auto &inDims  = inputDims();
+        const auto &outDims = outputDims();
+        if (outDims.size() != 2)
+            throw std::runtime_error("Yolo segmenter expects exactly 2 output tensors, got " + std::to_string(outDims.size()));
 
-        cv::Size2f size(inputDims[0].d[2], inputDims[0].d[1]);
+        cv::Size2f size(inDims[0].d[2], inDims[0].d[1]);
 
-        auto numChannels = outputDims[0].d[1];
-        auto numAnchors = outputDims[0].d[2];
+        auto numChannels = outDims[0].d[1];
+        auto numAnchors = outDims[0].d[2];
 
-        auto numMasks = outputDims[1].d[1];
-        auto maskHeight = outputDims[1].d[2];
-        auto maskWidth = outputDims[1].d[3];
+        auto numMasks = outDims[1].d[1];
+        auto maskHeight = outDims[1].d[2];
+        auto maskWidth = outDims[1].d[3];
 
         auto numClasses = numChannels - numMasks - 4; // 4 bbox
 
