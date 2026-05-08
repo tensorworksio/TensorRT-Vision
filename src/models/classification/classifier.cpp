@@ -41,7 +41,7 @@ namespace cls
                 continue;
 
             int class_id = static_cast<int>(i);
-            det.labels[det.class_id] = det.class_name;
+            det.labels[class_id] = getClassName(class_id);
 
             // Keep track of the highest confidence for the main detection fields
             if (featureVector[i] > maxConfidence)
