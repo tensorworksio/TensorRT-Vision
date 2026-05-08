@@ -1,39 +1,33 @@
 #include <string>
 #include <fstream>
 #include <print>
-#include <sstream>
+#include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
-#include <boost/program_options.hpp>
 #include <utils/geometry_utils.hpp>
 #include <models/reid/reid.hpp>
 
-namespace po = boost::program_options;
-
 int main(int argc, char *argv[])
 {
-    po::options_description options("Program options");
-    options.add_options()("help,h", "Show help message");
-    options.add_options()("query,q", po::value<std::string>()->required(), "Query image to compare");
-    options.add_options()("key,k", po::value<std::string>()->required(), "Key image to compare against");
-    options.add_options()("config,c", po::value<std::string>(), "Path to model config.json");
-    options.add_options()("output,o", po::value<std::string>(), "Output file");
-    options.add_options()("display,d", po::bool_switch(), "Display images");
+    argparse::ArgumentParser program("reid");
+    program.add_argument("-q", "--query").required().help("Query image to compare");
+    program.add_argument("-k", "--key").required().help("Key image to compare against");
+    program.add_argument("-c", "--config").required().help("Path to model config.json");
+    program.add_argument("-o", "--output").help("Output file");
+    program.add_argument("-d", "--display").flag().help("Display images");
 
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, options), vm);
-
-    if (vm.count("help"))
+    try
     {
-        std::ostringstream oss;
-        oss << options;
-        std::println("{}", oss.str());
+        program.parse_args(argc, argv);
+    }
+    catch (const std::exception &e)
+    {
+        std::println(stderr, "{}", e.what());
+        std::println(stderr, "{}", program.help().str());
         return 1;
     }
 
-    po::notify(vm);
-
     // Input query
-    std::string queryPath = vm["query"].as<std::string>();
+    auto queryPath = program.get<std::string>("--query");
     cv::Mat queryImage = cv::imread(queryPath, cv::IMREAD_COLOR);
     if (queryImage.empty())
     {
@@ -42,7 +36,7 @@ int main(int argc, char *argv[])
     }
 
     // Input key
-    std::string keyPath = vm["key"].as<std::string>();
+    auto keyPath = program.get<std::string>("--key");
     cv::Mat keyImage = cv::imread(keyPath, cv::IMREAD_COLOR);
     if (keyImage.empty())
     {
@@ -51,9 +45,7 @@ int main(int argc, char *argv[])
     }
 
     // Config
-    reid::ReIdConfig config;
-    std::string configPath = vm["config"].as<std::string>();
-    config = reid::ReIdConfig::load(configPath);
+    auto config = reid::ReIdConfig::load(program.get<std::string>("--config"));
 
     // Process images
     reid::ReId reid(config);
@@ -65,26 +57,18 @@ int main(int argc, char *argv[])
     bool match = similarity > reid.getConfig().confidenceThreshold;
     nlohmann::json output = {
         {"status", "success"},
-        {"data", {
-                     {"match", match},
-                     {"similarity", similarity},
-                 }}};
+        {"data", {{"match", match}, {"similarity", similarity}}}};
 
-    // Output results
-    if (vm.count("output"))
+    if (auto outputPath = program.present<std::string>("--output"))
     {
-        std::string outputPath = vm["output"].as<std::string>();
-        std::ofstream outFile(outputPath);
+        std::ofstream outFile(*outputPath);
         if (outFile.is_open())
         {
-            outFile << output.dump() << std::endl;
-            outFile.close();
+            outFile << output.dump() << "\n";
         }
         else
         {
-            nlohmann::json error = {
-                {"status", "error"},
-                {"message", "Could not create output file"}};
+            nlohmann::json error = {{"status", "error"}, {"message", "Could not create output file"}};
             std::println(stderr, "{}", error.dump());
             return 1;
         }
@@ -94,8 +78,7 @@ int main(int argc, char *argv[])
         std::println("{}", output.dump());
     }
 
-    // Display image if requested
-    if (vm["display"].as<bool>())
+    if (program.get<bool>("--display"))
     {
         int maxHeight = std::max(queryImage.rows, keyImage.rows);
         int totalWidth = queryImage.cols + keyImage.cols;
@@ -107,10 +90,8 @@ int main(int argc, char *argv[])
         queryImage.copyTo(leftROI);
         keyImage.copyTo(rightROI);
 
-        cv::putText(canvas, "Query", cv::Point(10, 30),
-                    cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
-        cv::putText(canvas, "Key", cv::Point(queryImage.cols + 10, 30),
-                    cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
+        cv::putText(canvas, "Query", cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
+        cv::putText(canvas, "Key", cv::Point(queryImage.cols + 10, 30), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
 
         cv::namedWindow("ReID Comparison", cv::WINDOW_AUTOSIZE);
         cv::imshow("ReID Comparison", canvas);

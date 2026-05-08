@@ -12,23 +12,14 @@ src_files = files(
 data_dir = 'data'
 
 run_command('mkdir', '-p', meson.current_source_dir() / data_dir, check: false)
+run_command('rm', '-f', meson.current_build_dir() / data_dir, check: true)
+run_command('ln', '-s', meson.current_source_dir() / data_dir, meson.current_build_dir() / data_dir, check: true)
 
-custom_target('mot-data',
-    output: '.mot-data-stamp',
-    command: [
-        'sh', '-c',
-        'mkdir -p "$1" && cp -rT "$2" "$1" && touch "$3"',
-        'sh',
-        meson.current_build_dir() / data_dir,
-        meson.current_source_dir() / data_dir,
-        '@OUTPUT@'
-    ],
-    build_by_default: true
-)
+argparse_dep = dependency('argparse', required: true)
 
 executable('mot',
     src_files,
-    dependencies: [engine_dep, mot_dep],
+    dependencies: [engine_dep, mot_dep, argparse_dep],
     include_directories: include_directories('.'),
     install: true
 )

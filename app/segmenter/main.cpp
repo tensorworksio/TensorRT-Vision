@@ -2,14 +2,10 @@
 #include <signal.h>
 #include <atomic>
 #include <print>
-#include <sstream>
-
-#include <types/frame.hpp>
+#include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
-#include <boost/program_options.hpp>
+#include <types/frame.hpp>
 #include <models/segmentation/factory.hpp>
-
-namespace po = boost::program_options;
 
 std::atomic<bool> running{true};
 
@@ -20,37 +16,31 @@ void signalHandler([[maybe_unused]] int signum)
 
 int main(int argc, char *argv[])
 {
-    po::options_description options("Program options");
-    options.add_options()("help,h", "Show help message");
-    options.add_options()("input,i", po::value<std::string>()->required(), "Input video file or camera index (0,1,...)");
-    options.add_options()("config,c", po::value<std::string>(), "Path to model config.json");
-    options.add_options()("output,o", po::value<std::string>(), "Output video file");
-    options.add_options()("display,d", po::bool_switch(), "Display video frames");
+    argparse::ArgumentParser program("segment");
+    program.add_argument("-i", "--input").required().help("Input video file or camera index (0,1,...)");
+    program.add_argument("-c", "--config").required().help("Path to model config.json");
+    program.add_argument("-o", "--output").help("Output video file");
+    program.add_argument("-d", "--display").flag().help("Display video frames");
 
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, options), vm);
-
-    if (vm.count("help"))
+    try
     {
-        std::ostringstream oss;
-        oss << options;
-        std::println("{}", oss.str());
+        program.parse_args(argc, argv);
+    }
+    catch (const std::exception &e)
+    {
+        std::println(stderr, "{}", e.what());
+        std::println(stderr, "{}", program.help().str());
         return 1;
     }
 
-    po::notify(vm);
-
     // Input
-    std::string inputPath = vm["input"].as<std::string>();
+    auto inputPath = program.get<std::string>("--input");
     cv::VideoCapture cap;
     if (inputPath.size() == 1 && std::isdigit(inputPath[0]))
-    {
         cap.open(std::stoi(inputPath));
-    }
     else
-    {
         cap.open(inputPath);
-    }
+
     if (!cap.isOpened())
     {
         std::println(stderr, "Error: Could not open video source {}", inputPath);
@@ -58,32 +48,26 @@ int main(int argc, char *argv[])
     }
 
     // Load model
-    std::string configPath = vm["config"].as<std::string>();
-    auto model = seg::SegmenterFactory::create(configPath);
+    auto model = seg::SegmenterFactory::create(program.get<std::string>("--config"));
 
     // Output
     cv::VideoWriter writer;
-    if (vm.count("output"))
+    if (auto outputPath = program.present<std::string>("--output"))
     {
-        std::string outputPath = vm["output"].as<std::string>();
         int fourcc = cv::VideoWriter::fourcc('m', 'p', '4', 'v');
         double fps = cap.get(cv::CAP_PROP_FPS);
-        cv::Size frameSize(cap.get(cv::CAP_PROP_FRAME_WIDTH),
-                           cap.get(cv::CAP_PROP_FRAME_HEIGHT));
-        writer.open(outputPath, fourcc, fps, frameSize);
+        cv::Size frameSize(cap.get(cv::CAP_PROP_FRAME_WIDTH), cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+        writer.open(*outputPath, fourcc, fps, frameSize);
         if (!writer.isOpened())
         {
-            std::println(stderr, "Error: Could not create output video {}", outputPath);
+            std::println(stderr, "Error: Could not create output video {}", *outputPath);
             return 1;
         }
     }
 
-    // Display
-    bool display = vm["display"].as<bool>() || !vm.count("output");
+    bool display = program.get<bool>("--display") || !program.is_used("--output");
     if (display)
-    {
         cv::namedWindow("Segmentations", cv::WINDOW_AUTOSIZE);
-    }
 
     Frame frame;
     signal(SIGINT, signalHandler);
@@ -94,10 +78,7 @@ int main(int argc, char *argv[])
         if (frame.empty())
             break;
 
-        // Detect objects
         auto detections = model->process(frame.image);
-
-        // Draw detections
         cv::Mat output = frame.draw(detections);
 
         if (display)

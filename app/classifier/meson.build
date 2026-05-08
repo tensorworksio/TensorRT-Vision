@@ -5,23 +5,14 @@ src = files(
 data_dir = 'data'
 
 run_command('mkdir', '-p', meson.current_source_dir() / data_dir, check: false)
+run_command('rm', '-f', meson.current_build_dir() / data_dir, check: true)
+run_command('ln', '-s', meson.current_source_dir() / data_dir, meson.current_build_dir() / data_dir, check: true)
 
-custom_target('classifier-data',
-    output: '.classifier-data-stamp',
-    command: [
-        'sh', '-c',
-        'mkdir -p "$1" && cp -rT "$2" "$1" && touch "$3"',
-        'sh',
-        meson.current_build_dir() / data_dir,
-        meson.current_source_dir() / data_dir,
-        '@OUTPUT@'
-    ],
-    build_by_default: true
-)
+argparse_dep = dependency('argparse', required: true)
 
 executable('classify',
     src,
-    dependencies: [engine_dep],
+    dependencies: [engine_dep, argparse_dep],
     include_directories: include_directories('.'),
     install: true
 )
