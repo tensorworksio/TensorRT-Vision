@@ -8,7 +8,8 @@ namespace det
     bool Yolo::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg)
     {
         const auto &inputDims = engine->getInputDims();
-        assert(inputDims.size() == 1);
+        if (inputDims.size() != 1)
+            throw std::runtime_error("Yolo detector expects exactly 1 input tensor, got " + std::to_string(inputDims.size()));
 
         cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
 
@@ -22,7 +23,8 @@ namespace det
     {
         const auto &inputDims = engine->getInputDims();
         const auto &outputDims = engine->getOutputDims();
-        assert(outputDims.size() == 1);
+        if (outputDims.size() != 1)
+            throw std::runtime_error("Yolo detector expects exactly 1 output tensor, got " + std::to_string(outputDims.size()));
 
         cv::Size2f size(inputDims[0].d[2], inputDims[0].d[1]);
 
@@ -95,7 +97,8 @@ namespace det
     {
         const auto &inputDims = engine->getInputDims();
         const auto &outputDims = engine->getOutputDims();
-        assert(outputDims.size() == 1);
+        if (outputDims.size() != 1)
+            throw std::runtime_error("Yolov7 detector expects exactly 1 output tensor, got " + std::to_string(outputDims.size()));
 
         cv::Size2f size(inputDims[0].d[2], inputDims[0].d[1]);
 

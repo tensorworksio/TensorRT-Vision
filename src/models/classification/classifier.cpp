@@ -6,7 +6,8 @@ namespace cls
     bool BaseClassifier::preprocess(const cv::Mat &srcImg, cv::Mat &dstImg)
     {
         const auto &inputDims = engine->getInputDims();
-        assert(inputDims.size() == 1);
+        if (inputDims.size() != 1)
+            throw std::runtime_error("Classifier expects exactly 1 input tensor, got " + std::to_string(inputDims.size()));
 
         cv::Size size(inputDims[0].d[2], inputDims[0].d[1]);
 
