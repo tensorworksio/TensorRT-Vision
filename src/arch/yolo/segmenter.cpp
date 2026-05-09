@@ -1,6 +1,6 @@
 #include <opencv2/dnn.hpp>
 #include <utils/detection_utils.hpp>
-#include <models/segmentation/yolo.hpp>
+#include <arch/yolo/segmenter.hpp>
 
 namespace seg
 {

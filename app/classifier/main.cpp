@@ -4,7 +4,7 @@
 #include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
 #include <types/detection.hpp>
-#include <models/classification/classifier.hpp>
+#include <tasks/classification.hpp>
 
 int main(int argc, char *argv[])
 {

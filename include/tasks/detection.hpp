@@ -1,12 +1,13 @@
 #pragma once
 
+#include <memory>
+#include <string>
 #include <types/detection.hpp>
 #include <engine/processor.hpp>
 #include <engine/interface.hpp>
 
 namespace det
 {
-
     template <typename EngineOutput>
     class Detector : public trt::DetectionProcessor, public trt::ModelProcessor<std::vector<Detection>, EngineOutput>
     {
@@ -25,4 +26,9 @@ namespace det
         }
     };
 
-} // det
+    class DetectorFactory
+    {
+    public:
+        static std::unique_ptr<trt::DetectionProcessor> create(const std::string &config_file);
+    };
+} // namespace det

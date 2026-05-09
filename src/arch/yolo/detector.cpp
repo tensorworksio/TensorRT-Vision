@@ -1,6 +1,6 @@
 #include <opencv2/dnn.hpp>
 #include <utils/detection_utils.hpp>
-#include <models/detection/yolo.hpp>
+#include <arch/yolo/detector.hpp>
 
 namespace det
 {

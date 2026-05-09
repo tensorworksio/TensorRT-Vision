@@ -1,4 +1,5 @@
 #pragma once
+
 #include <fstream>
 #include <utils/json_utils.hpp>
 #include <engine/processor.hpp>
@@ -26,17 +27,11 @@ namespace reid
 
             ReIdConfig config;
             if (task.empty())
-            {
                 config.loadFromJson(data);
-            }
             else if (data.contains(task))
-            {
                 config.loadFromJson(data[task]);
-            }
             else
-            {
                 throw std::runtime_error("Config file does not contain task: " + task);
-            }
 
             return config;
         }

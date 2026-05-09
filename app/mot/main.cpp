@@ -7,9 +7,9 @@
 #include <opencv2/opencv.hpp>
 #include <types/frame.hpp>
 #include <tracking/factory.hpp>
-#include <models/reid/reid.hpp>
-#include <models/detection/factory.hpp>
-#include <models/segmentation/factory.hpp>
+#include <tasks/reid.hpp>
+#include <tasks/detection.hpp>
+#include <tasks/segmentation.hpp>
 
 std::atomic<bool> running{true};
 

@@ -4,7 +4,7 @@
 #include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
 #include <utils/geometry_utils.hpp>
-#include <models/reid/reid.hpp>
+#include <tasks/reid.hpp>
 
 int main(int argc, char *argv[])
 {

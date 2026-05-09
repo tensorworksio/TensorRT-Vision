@@ -40,10 +40,12 @@ dependencies = [opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, vision
 # Source files
 src_files = files(
   'src/engine/engine.cpp',
-  'src/models/classification/classifier.cpp',
-  'src/models/detection/yolo.cpp',
-  'src/models/reid/reid.cpp',
-  'src/models/segmentation/yolo.cpp'
+  'src/tasks/classification.cpp',
+  'src/tasks/detection.cpp',
+  'src/tasks/reid.cpp',
+  'src/tasks/segmentation.cpp',
+  'src/arch/yolo/detector.cpp',
+  'src/arch/yolo/segmenter.cpp'
 )
 
 # Include

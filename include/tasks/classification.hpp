@@ -34,24 +34,16 @@ namespace cls
 
             ClassifierConfig config;
             if (task.empty())
-            {
                 config.loadFromJson(data);
-            }
             else if (data.contains(task))
-            {
                 config.loadFromJson(data[task]);
-            }
             else
-            {
                 throw std::runtime_error("Config file does not contain task: " + task);
-            }
 
             return config;
         }
-
     };
 
-    // Base classifier class
     class BaseClassifier : public trt::ClassificationProcessor, public trt::SISOProcessor<Detection>
     {
     public:
@@ -80,7 +72,6 @@ namespace cls
         const ClassifierConfig config;
     };
 
-    // Single label classifier
     class SingleLabelClassifier : public BaseClassifier
     {
     public:
@@ -90,7 +81,6 @@ namespace cls
         Detection postprocess(const trt::SingleOutput &featureVector) override;
     };
 
-    // Multi label classifier
     class MultiLabelClassifier : public BaseClassifier
     {
     public:

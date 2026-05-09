@@ -1,5 +1,5 @@
 #include <utils/detection_utils.hpp>
-#include <models/classification/classifier.hpp>
+#include <tasks/classification.hpp>
 
 namespace cls
 {

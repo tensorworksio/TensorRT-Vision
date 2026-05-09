@@ -5,7 +5,7 @@
 #include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
 #include <types/frame.hpp>
-#include <models/segmentation/factory.hpp>
+#include <tasks/segmentation.hpp>
 
 std::atomic<bool> running{true};
 
