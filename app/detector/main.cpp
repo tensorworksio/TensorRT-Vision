@@ -5,6 +5,7 @@
 #include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
 #include <types/frame.hpp>
+#include <utils/draw_utils.hpp>
 #include <tasks/detection.hpp>
 
 std::atomic<bool> running{true};
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
             break;
 
         auto detections = model->process(frame.image);
-        cv::Mat output = frame.draw(detections);
+        cv::Mat output = drawDetections(frame, detections);
 
         if (display)
             cv::imshow("Detections", output);

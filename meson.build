@@ -14,7 +14,6 @@ vision_core_dep = vision_core_proj.get_variable('vision_core_dep')
 # Dependencies
 cuda_dep = dependency('cuda')
 spdlog_dep = dependency('spdlog')
-json_dep = dependency('nlohmann_json')
 opencv_dep = dependency('opencv4',
   modules: ['core', 'highgui', 'imgproc', 'imgcodecs', 'video', 'videoio'],
   include_type: 'system'
@@ -35,7 +34,7 @@ tensorrt_dep = declare_dependency(
   link_args : ['-L' + tensorrt_lib_dir, '-lnvinfer', '-lnvinfer_plugin', '-lcudart']
 )
 
-dependencies = [opencv_dep, spdlog_dep, json_dep, cuda_dep, tensorrt_dep, vision_core_dep]
+dependencies = [opencv_dep, spdlog_dep, cuda_dep, tensorrt_dep, vision_core_dep]
 
 # Source files
 src_files = files(

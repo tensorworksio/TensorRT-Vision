@@ -20,7 +20,7 @@ namespace cls
     {
         Detection det;
         auto maxElement = std::max_element(featureVector.begin(), featureVector.end());
-        if (*maxElement >= config.confidenceThreshold)
+        if (*maxElement >= config.confidence_threshold)
         {
             det.class_id = std::distance(featureVector.begin(), maxElement);
             det.confidence = *maxElement;
@@ -33,20 +33,20 @@ namespace cls
     Detection MultiLabelClassifier::postprocess(const trt::SingleOutput &featureVector)
     {
         Detection det;
-        float maxConfidence = 0.0f;
+        float max_confidence = 0.0f;
 
         for (size_t i = 0; i < featureVector.size(); ++i)
         {
-            if (featureVector[i] < config.confidenceThreshold)
+            if (featureVector[i] < config.confidence_threshold)
                 continue;
 
             int class_id = static_cast<int>(i);
             det.labels[class_id] = getClassName(class_id);
 
             // Keep track of the highest confidence for the main detection fields
-            if (featureVector[i] > maxConfidence)
+            if (featureVector[i] > max_confidence)
             {
-                maxConfidence = featureVector[i];
+                max_confidence = featureVector[i];
                 det.class_id = class_id;
                 det.class_name = getClassName(class_id);
                 det.confidence = featureVector[i];

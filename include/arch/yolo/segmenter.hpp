@@ -1,51 +1,24 @@
 #pragma once
 
-#include <fstream>
 #include <types/detection.hpp>
-#include <nlohmann/json.hpp>
 #include <arch/yolo/config.hpp>
 #include <tasks/segmentation.hpp>
 
 namespace seg
 {
-    enum class YoloVersion
-    {
-        YOLOv8,
-        YOLOv11,
-        UNKNOWN
-    };
-
-    inline std::string getYoloVersionString(YoloVersion version)
-    {
-        switch (version)
-        {
-        case YoloVersion::YOLOv8:  return "yolov8";
-        case YoloVersion::YOLOv11: return "yolov11";
-        default: throw std::runtime_error("Unknown yolo version");
-        }
-    }
+    enum class YoloVersion { YOLOv8, YOLOv11, UNKNOWN };
 
     inline YoloVersion getYoloVersion(const std::string &name)
     {
-        std::string lower_name = name;
-        std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
-        for (auto v : {YoloVersion::YOLOv8, YoloVersion::YOLOv11})
-            if (lower_name == getYoloVersionString(v))
-                return v;
+        std::string lower = name;
+        std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+        if (lower == "yolov8")  return YoloVersion::YOLOv8;
+        if (lower == "yolov11") return YoloVersion::YOLOv11;
         return YoloVersion::UNKNOWN;
     }
 
-    struct YoloConfig : YoloBaseConfig
-    {
-        float maskThreshold = 0.5f;
-
-        void loadFromJson(const nlohmann::json &data) override
-        {
-            YoloBaseConfig::loadFromJson(data);
-            if (data.contains("mask_threshold"))
-                maskThreshold = data["mask_threshold"].get<float>();
-        }
-    };
+    using YoloConfig = YoloBaseConfig;
+    using SegmenterArch = rfl::TaggedUnion<"architecture", YoloConfig>;
 
     class Yolo : public Segmenter<trt::MultiOutput>
     {
@@ -56,7 +29,9 @@ namespace seg
         const YoloConfig &getConfig() const { return config; }
         const std::string getClassName(int class_id) const
         {
-            return (static_cast<size_t>(class_id) < config.classNames.size()) ? config.classNames[class_id] : std::to_string(class_id);
+            return (static_cast<size_t>(class_id) < config.class_names.size())
+                       ? config.class_names[class_id]
+                       : std::to_string(class_id);
         }
 
     protected:
@@ -73,17 +48,16 @@ namespace seg
     class YoloFactory
     {
     public:
-        static std::unique_ptr<Yolo> create(const nlohmann::json &data)
+        static std::unique_ptr<Yolo> create(YoloConfig config)
         {
-            YoloVersion version = getYoloVersion(data["segmenter"]["name"]);
-            auto config = YoloConfig();
-            config.loadFromJson(data["segmenter"]);
+            if (config.class_names_file)
+                config.class_names = loadClassNamesFromFile(*config.class_names_file);
 
-            switch (version)
+            switch (getYoloVersion(config.name))
             {
             case YoloVersion::YOLOv8:  return std::make_unique<Yolov8>(config);
             case YoloVersion::YOLOv11: return std::make_unique<Yolov11>(config);
-            default: throw std::runtime_error("Unsupported yolo version");
+            default: throw std::runtime_error("Unsupported yolo version: " + config.name);
             }
         }
     };

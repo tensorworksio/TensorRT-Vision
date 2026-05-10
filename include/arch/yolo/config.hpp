@@ -1,32 +1,23 @@
 #pragma once
 
-#include <utils/json_utils.hpp>
+#include <optional>
+#include <string>
+#include <vector>
+#include <rfl/Literal.hpp>
 #include <engine/engine.hpp>
+#include <utils/config_utils.hpp>
 
-struct YoloBaseConfig : JsonConfig
+struct YoloBaseConfig
 {
-    trt::EngineConfig engine{};
-    float confidenceThreshold = 0.25f;
-    float nmsThreshold = 0.45f;
-    float nmsEta = 1.f;
-    int topK = 100;
-    std::vector<std::string> classNames{};
+    using Tag = rfl::Literal<"yolo">;
 
-    void loadFromJson(const nlohmann::json &data) override
-    {
-        if (data.contains("engine"))
-            engine.loadFromJson(data["engine"]);
-        if (data.contains("confidence_threshold"))
-            confidenceThreshold = data["confidence_threshold"].get<float>();
-        if (data.contains("nms_threshold"))
-            nmsThreshold = data["nms_threshold"].get<float>();
-        if (data.contains("nms_eta"))
-            nmsEta = data["nms_eta"].get<float>();
-        if (data.contains("top_k"))
-            topK = data["top_k"].get<int>();
-        if (data.contains("class_names_file"))
-            classNames = loadClassNamesFromFile(data["class_names_file"].get<std::string>());
-        else if (data.contains("class_names"))
-            classNames = data["class_names"].get<std::vector<std::string>>();
-    }
+    trt::EngineConfig engine{};
+    std::string name{};
+    float confidence_threshold = 0.25f;
+    float nms_threshold = 0.45f;
+    float nms_eta = 1.f;
+    int top_k = 100;
+    std::optional<std::string> class_names_file{};
+    std::optional<float> mask_threshold{};
+    std::vector<std::string> class_names{};
 };

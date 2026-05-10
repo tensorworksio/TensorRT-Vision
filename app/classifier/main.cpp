@@ -3,6 +3,7 @@
 #include <print>
 #include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
+#include <rfl/json.hpp>
 #include <types/detection.hpp>
 #include <tasks/classification.hpp>
 
@@ -42,27 +43,27 @@ int main(int argc, char *argv[])
     Detection det = classifier.process(image);
 
     // Output
-    nlohmann::json output = {
-        {"status", "success"},
-        {"data", {{"class_id", det.class_id}, {"class_name", det.class_name}, {"confidence", det.confidence}}}};
+    struct OutputData { int class_id; std::string class_name; float confidence; };
+    struct Output { std::string status; OutputData data; };
+    auto output = rfl::json::write(Output{"success", {det.class_id, det.class_name, det.confidence}});
 
     if (auto outputPath = program.present<std::string>("--output"))
     {
         std::ofstream outFile(*outputPath);
         if (outFile.is_open())
         {
-            outFile << output.dump() << "\n";
+            outFile << output << "\n";
         }
         else
         {
-            nlohmann::json error = {{"status", "error"}, {"message", "Could not create output file"}};
-            std::println(stderr, "{}", error.dump());
+            struct Error { std::string status; std::string message; };
+            std::println(stderr, "{}", rfl::json::write(Error{"error", "Could not create output file"}));
             return 1;
         }
     }
     else
     {
-        std::println("{}", output.dump());
+        std::println("{}", output);
     }
 
     if (program.get<bool>("--display"))

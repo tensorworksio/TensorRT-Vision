@@ -11,11 +11,11 @@ namespace trt
     {
         // Engine options
         EngineOptions options;
-        setEngineOptions(options, config.batchSize, config.precision);
+        setEngineOptions(options, config.batch_size, config.precision);
 
         // Load engine
         engine = std::make_unique<Engine>(options);
-        loadEngine(*engine, config.modelPath);
+        loadEngine(*engine, config.model_path);
     }
 
     template <typename OutputType, typename EngineOutput>

@@ -1,8 +1,6 @@
 #pragma once
 
-#include <fstream>
 #include <types/detection.hpp>
-#include <nlohmann/json.hpp>
 #include <arch/yolo/config.hpp>
 #include <tasks/detection.hpp>
 
@@ -16,28 +14,21 @@ namespace det
         UNKNOWN
     };
 
-    inline std::string getYoloVersionString(YoloVersion version)
-    {
-        switch (version)
-        {
-        case YoloVersion::YOLOv7:  return "yolov7";
-        case YoloVersion::YOLOv8:  return "yolov8";
-        case YoloVersion::YOLOv11: return "yolov11";
-        default: throw std::runtime_error("Unknown yolo version");
-        }
-    }
-
     inline YoloVersion getYoloVersion(const std::string &name)
     {
-        std::string lower_name = name;
-        std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
-        for (auto v : {YoloVersion::YOLOv7, YoloVersion::YOLOv8, YoloVersion::YOLOv11})
-            if (lower_name == getYoloVersionString(v))
-                return v;
+        std::string lower = name;
+        std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+        if (lower == "yolov7")
+            return YoloVersion::YOLOv7;
+        if (lower == "yolov8")
+            return YoloVersion::YOLOv8;
+        if (lower == "yolov11")
+            return YoloVersion::YOLOv11;
         return YoloVersion::UNKNOWN;
     }
 
-    struct YoloConfig : YoloBaseConfig {};
+    using YoloConfig = YoloBaseConfig;
+    using DetectorArch = rfl::TaggedUnion<"architecture", YoloConfig>;
 
     class Yolo : public Detector<trt::SingleOutput>
     {
@@ -48,7 +39,9 @@ namespace det
         const YoloConfig &getConfig() const { return config; }
         const std::string getClassName(int class_id) const
         {
-            return (static_cast<size_t>(class_id) < config.classNames.size()) ? config.classNames[class_id] : std::to_string(class_id);
+            return (static_cast<size_t>(class_id) < config.class_names.size())
+                       ? config.class_names[class_id]
+                       : std::to_string(class_id);
         }
 
     protected:
@@ -65,27 +58,29 @@ namespace det
         using Yolo::Yolo;
 
     private:
-        std::vector<Detection> postprocess(const trt::SingleOutput &featureVector) override;
+        std::vector<Detection> postprocess(const trt::SingleOutput &) override;
     };
-
-    using Yolov8  = Yolo;
+    using Yolov8 = Yolo;
     using Yolov11 = Yolo;
 
     class YoloFactory
     {
     public:
-        static std::unique_ptr<Yolo> create(const nlohmann::json &data)
+        static std::unique_ptr<Yolo> create(YoloConfig config)
         {
-            YoloVersion version = getYoloVersion(data["detector"]["name"]);
-            auto config = YoloConfig();
-            config.loadFromJson(data["detector"]);
+            if (config.class_names_file)
+                config.class_names = loadClassNamesFromFile(*config.class_names_file);
 
-            switch (version)
+            switch (getYoloVersion(config.name))
             {
-            case YoloVersion::YOLOv7:  return std::make_unique<Yolov7>(config);
-            case YoloVersion::YOLOv8:  return std::make_unique<Yolov8>(config);
-            case YoloVersion::YOLOv11: return std::make_unique<Yolov11>(config);
-            default: throw std::runtime_error("Unsupported yolo version");
+            case YoloVersion::YOLOv7:
+                return std::make_unique<Yolov7>(config);
+            case YoloVersion::YOLOv8:
+                return std::make_unique<Yolov8>(config);
+            case YoloVersion::YOLOv11:
+                return std::make_unique<Yolov11>(config);
+            default:
+                throw std::runtime_error("Unsupported yolo version: " + config.name);
             }
         }
     };

@@ -1,11 +1,13 @@
 #include <string>
-#include <fstream>
 #include <signal.h>
 #include <atomic>
 #include <print>
 #include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
+#include <rfl/Generic.hpp>
+#include <rfl/json.hpp>
 #include <types/frame.hpp>
+#include <utils/draw_utils.hpp>
 #include <tracking/factory.hpp>
 #include <tasks/reid.hpp>
 #include <tasks/detection.hpp>
@@ -54,10 +56,9 @@ int main(int argc, char *argv[])
 
     // Load config
     auto configPath = program.get<std::string>("--config");
-    std::ifstream file(configPath);
-    auto config = nlohmann::json::parse(file);
-    bool reid = program.get<bool>("--reid") && config.contains("reid");
-    bool segment = config.contains("segmenter");
+    auto configObj = *rfl::to_object(*rfl::json::load<rfl::Generic>(configPath));
+    bool reid = program.get<bool>("--reid") && configObj.count("reid") > 0;
+    bool segment = configObj.count("segmenter") > 0;
 
     // Load tracker & model
     auto tracker = TrackerFactory::create(configPath);
@@ -115,7 +116,7 @@ int main(int argc, char *argv[])
         }
 
         tracker->update(detections);
-        cv::Mat output = frame.draw(detections, true, true);
+        cv::Mat output = drawDetections(frame, detections, true, true);
 
         if (display)
             cv::imshow("Multi Object Tracking", output);

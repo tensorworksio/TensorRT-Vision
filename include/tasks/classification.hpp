@@ -1,45 +1,25 @@
 #pragma once
 
-#include <fstream>
 #include <types/detection.hpp>
-#include <utils/json_utils.hpp>
+#include <utils/config_utils.hpp>
 #include <engine/processor.hpp>
 #include <engine/interface.hpp>
 
 namespace cls
 {
 
-    struct ClassifierConfig : JsonConfig
+    struct ClassifierConfig
     {
-        trt::EngineConfig engine;
-        float confidenceThreshold{0.9f};
-        std::vector<std::string> classNames{};
-
-        void loadFromJson(const nlohmann::json &data) override
-        {
-            if (data.contains("engine"))
-                engine.loadFromJson(data["engine"]);
-            if (data.contains("confidence_threshold"))
-                confidenceThreshold = data["confidence_threshold"].get<float>();
-            if (data.contains("class_names_file"))
-                classNames = loadClassNamesFromFile(data["class_names_file"].get<std::string>());
-            else if (data.contains("class_names"))
-                classNames = data["class_names"].get<std::vector<std::string>>();
-        }
+        trt::EngineConfig engine{};
+        float confidence_threshold = 0.9f;
+        std::optional<std::string> class_names_file{};
+        std::vector<std::string> class_names{};
 
         static ClassifierConfig load(const std::string &filename, const std::string &task = "")
         {
-            std::ifstream file(filename);
-            auto data = nlohmann::json::parse(file, nullptr, true, true);
-
-            ClassifierConfig config;
-            if (task.empty())
-                config.loadFromJson(data);
-            else if (data.contains(task))
-                config.loadFromJson(data[task]);
-            else
-                throw std::runtime_error("Config file does not contain task: " + task);
-
+            auto config = loadConfig<ClassifierConfig>(filename, task);
+            if (config.class_names_file)
+                config.class_names = loadClassNamesFromFile(*config.class_names_file);
             return config;
         }
     };
@@ -64,7 +44,7 @@ namespace cls
 
         const std::string getClassName(int class_id) const
         {
-            return (static_cast<size_t>(class_id) < config.classNames.size()) ? config.classNames[class_id] : std::to_string(class_id);
+            return (static_cast<size_t>(class_id) < config.class_names.size()) ? config.class_names[class_id] : std::to_string(class_id);
         }
 
     protected:

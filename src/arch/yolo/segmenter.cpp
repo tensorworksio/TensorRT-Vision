@@ -61,7 +61,7 @@ namespace seg
             float score = *maxClsPtr;
             int class_id = maxClsPtr - scoresPtr;
 
-            if (score < config.confidenceThreshold)
+            if (score < config.confidence_threshold)
                 continue;
 
             float xn = *bboxesPtr++;
@@ -84,7 +84,7 @@ namespace seg
 
         // Non Maximum Suppression
         std::vector<int> indices;
-        cv::dnn::NMSBoxes(bboxes, scores, config.confidenceThreshold, config.nmsThreshold, indices, config.nmsEta, config.topK);
+        cv::dnn::NMSBoxes(bboxes, scores, config.confidence_threshold, config.nms_threshold, indices, config.nms_eta, config.top_k);
 
         // Fill output detections
         std::vector<Detection> detections;

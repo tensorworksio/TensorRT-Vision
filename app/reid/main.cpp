@@ -3,6 +3,7 @@
 #include <print>
 #include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
+#include <rfl/json.hpp>
 #include <utils/geometry_utils.hpp>
 #include <tasks/reid.hpp>
 
@@ -54,28 +55,29 @@ int main(int argc, char *argv[])
 
     // Output
     float similarity = cosineSimilarity(featureVector1, featureVector2);
-    bool match = similarity > reid.getConfig().confidenceThreshold;
-    nlohmann::json output = {
-        {"status", "success"},
-        {"data", {{"match", match}, {"similarity", similarity}}}};
+    bool match = similarity > reid.getConfig().confidence_threshold;
+
+    struct OutputData { bool match; float similarity; };
+    struct Output { std::string status; OutputData data; };
+    auto output = rfl::json::write(Output{"success", {match, similarity}});
 
     if (auto outputPath = program.present<std::string>("--output"))
     {
         std::ofstream outFile(*outputPath);
         if (outFile.is_open())
         {
-            outFile << output.dump() << "\n";
+            outFile << output << "\n";
         }
         else
         {
-            nlohmann::json error = {{"status", "error"}, {"message", "Could not create output file"}};
-            std::println(stderr, "{}", error.dump());
+            struct Error { std::string status; std::string message; };
+            std::println(stderr, "{}", rfl::json::write(Error{"error", "Could not create output file"}));
             return 1;
         }
     }
     else
     {
-        std::println("{}", output.dump());
+        std::println("{}", output);
     }
 
     if (program.get<bool>("--display"))

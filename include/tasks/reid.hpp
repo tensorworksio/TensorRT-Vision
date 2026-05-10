@@ -1,39 +1,20 @@
 #pragma once
 
-#include <fstream>
-#include <utils/json_utils.hpp>
+#include <types/detection.hpp>
+#include <utils/config_utils.hpp>
 #include <engine/processor.hpp>
 
 namespace reid
 {
 
-    struct ReIdConfig : public JsonConfig
+    struct ReIdConfig
     {
         trt::EngineConfig engine{};
-        float confidenceThreshold = 0.5f;
-
-        void loadFromJson(const nlohmann::json &data) override
-        {
-            if (data.contains("engine"))
-                engine.loadFromJson(data["engine"]);
-            if (data.contains("confidence_threshold"))
-                confidenceThreshold = data["confidence_threshold"].get<float>();
-        }
+        float confidence_threshold = 0.5f;
 
         static ReIdConfig load(const std::string &filename, const std::string &task = "")
         {
-            std::ifstream file(filename);
-            auto data = nlohmann::json::parse(file, nullptr, true, true);
-
-            ReIdConfig config;
-            if (task.empty())
-                config.loadFromJson(data);
-            else if (data.contains(task))
-                config.loadFromJson(data[task]);
-            else
-                throw std::runtime_error("Config file does not contain task: " + task);
-
-            return config;
+            return loadConfig<ReIdConfig>(filename, task);
         }
     };
 
