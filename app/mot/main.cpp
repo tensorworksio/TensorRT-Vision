@@ -4,8 +4,6 @@
 #include <print>
 #include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
-#include <rfl/Generic.hpp>
-#include <rfl/json.hpp>
 #include <types/frame.hpp>
 #include <utils/draw_utils.hpp>
 #include <tracking/factory.hpp>
@@ -24,8 +22,10 @@ int main(int argc, char *argv[])
 {
     argparse::ArgumentParser program("mot");
     program.add_argument("-i", "--input").required().help("Input video file or camera index (0,1,...)");
-    program.add_argument("-c", "--config").required().help("Path to model config.json");
-    program.add_argument("--reid").flag().help("Activate ReId");
+    program.add_argument("--tracker").required().help("Path to tracker config TOML");
+    program.add_argument("--detector").help("Path to detector config TOML");
+    program.add_argument("--segmenter").help("Path to segmenter config TOML");
+    program.add_argument("--reid").help("Path to ReID config TOML");
     program.add_argument("-o", "--output").help("Output video file");
     program.add_argument("-d", "--display").flag().help("Display video frames");
 
@@ -37,6 +37,19 @@ int main(int argc, char *argv[])
     {
         std::println(stderr, "{}", e.what());
         std::println(stderr, "{}", program.help().str());
+        return 1;
+    }
+
+    bool hasDetector = program.is_used("--detector");
+    bool hasSegmenter = program.is_used("--segmenter");
+    if (!hasDetector && !hasSegmenter)
+    {
+        std::println(stderr, "Error: either --detector or --segmenter must be provided");
+        return 1;
+    }
+    if (hasDetector && hasSegmenter)
+    {
+        std::println(stderr, "Error: --detector and --segmenter are mutually exclusive");
         return 1;
     }
 
@@ -54,27 +67,23 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Load config
-    auto configPath = program.get<std::string>("--config");
-    auto configObj = *rfl::to_object(*rfl::json::load<rfl::Generic>(configPath));
-    bool reid = program.get<bool>("--reid") && configObj.count("reid") > 0;
-    bool segment = configObj.count("segmenter") > 0;
+    // Load tracker
+    auto tracker = TrackerFactory::create(program.get<std::string>("--tracker"));
 
-    // Load tracker & model
-    auto tracker = TrackerFactory::create(configPath);
-
+    // Load reid (optional)
     std::unique_ptr<reid::ReId> reidModel = nullptr;
-    if (reid)
+    if (auto reidPath = program.present<std::string>("--reid"))
     {
-        auto reidConfig = reid::ReIdConfig::load(configPath, "reid");
+        auto reidConfig = reid::ReIdConfig::load(*reidPath);
         reidModel = std::make_unique<reid::ReId>(reidConfig);
     }
 
+    // Load detector or segmenter
     std::unique_ptr<trt::DetectionProcessor> detector = nullptr;
-    if (segment)
-        detector = seg::SegmenterFactory::create(configPath);
+    if (hasSegmenter)
+        detector = seg::SegmenterFactory::create(program.get<std::string>("--segmenter"));
     else
-        detector = det::DetectorFactory::create(configPath);
+        detector = det::DetectorFactory::create(program.get<std::string>("--detector"));
 
     // Output
     cv::VideoWriter writer;
@@ -110,7 +119,7 @@ int main(int argc, char *argv[])
         {
             for (auto &det : detections)
             {
-                cv::Mat roi = frame.image(det.bbox);
+                cv::Mat roi = frame(det.bbox);
                 det.features = reidModel->process(roi);
             }
         }

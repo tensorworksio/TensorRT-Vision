@@ -15,9 +15,9 @@ namespace cls
         std::optional<std::string> class_names_file{};
         std::vector<std::string> class_names{};
 
-        static ClassifierConfig load(const std::string &filename, const std::string &task = "")
+        static ClassifierConfig load(const std::string &filename)
         {
-            auto config = loadConfig<ClassifierConfig>(filename, task);
+            auto config = loadConfig<ClassifierConfig>(filename);
             if (config.class_names_file)
                 config.class_names = loadClassNamesFromFile(*config.class_names_file);
             return config;

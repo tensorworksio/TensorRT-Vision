@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 {
     argparse::ArgumentParser program("classify");
     program.add_argument("-i", "--input").required().help("Input image");
-    program.add_argument("-c", "--config").required().help("Path to model config.json");
+    program.add_argument("-c", "--config").required().help("Path to model config TOML");
     program.add_argument("-d", "--display").flag().help("Display image with results");
     program.add_argument("-o", "--output").help("Output text file for results");
 
@@ -43,8 +43,17 @@ int main(int argc, char *argv[])
     Detection det = classifier.process(image);
 
     // Output
-    struct OutputData { int class_id; std::string class_name; float confidence; };
-    struct Output { std::string status; OutputData data; };
+    struct OutputData
+    {
+        int class_id;
+        std::string class_name;
+        float confidence;
+    };
+    struct Output
+    {
+        std::string status;
+        OutputData data;
+    };
     auto output = rfl::json::write(Output{"success", {det.class_id, det.class_name, det.confidence}});
 
     if (auto outputPath = program.present<std::string>("--output"))
@@ -56,7 +65,11 @@ int main(int argc, char *argv[])
         }
         else
         {
-            struct Error { std::string status; std::string message; };
+            struct Error
+            {
+                std::string status;
+                std::string message;
+            };
             std::println(stderr, "{}", rfl::json::write(Error{"error", "Could not create output file"}));
             return 1;
         }

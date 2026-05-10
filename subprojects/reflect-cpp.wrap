@@ -1,0 +1,7 @@
+[wrap-git]
+directory = reflect-cpp
+url = https://github.com/tensorworksio/reflect-cpp.git
+revision = main
+
+[provide]
+reflect-cpp = reflect_dep

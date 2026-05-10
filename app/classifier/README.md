@@ -18,21 +18,17 @@ trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16
 ```
 
 ## Configure
-In `data` folder, add your `config.json`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
+In `data` folder, add your `config.toml`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
 
-```json
-{
-  "engine": {
-    "model_path": "./data/model.engine",
-    "batch_size": 1,
-    "precision": 16
-  },
-  "confidence_threshold": 0.5,
-  "class_names_file": "./data/classes.txt"
-}
+```toml
+confidence_threshold = 0.5
+class_names_file = "./data/classes.txt"
+
+[engine]
+model_path = "./data/model.engine"
+batch_size = 1
+precision = "FP16"
 ```
-
-Config files support `//` and `/* */` comments.
 
 ## Compile
 ```shell
@@ -47,12 +43,12 @@ meson compile -C build
 ```shell
 # in root directory
 cd build/app/classifier
-./classify -i image.jpg -c data/config.json -d
+./classify -i image.jpg -c data/config.toml -d
 ```
 
 ### JQuery Pipeline
 ```shell
 # in root directory
 cd build/app/classifier
-./classify -i image.jpg -c data/config.json | jq .data.class_name
+./classify -i image.jpg -c data/config.toml | jq .data.class_name
 ```

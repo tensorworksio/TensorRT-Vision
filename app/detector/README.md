@@ -26,70 +26,56 @@ trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16
 ```
 
 ## Configure
-In `data` folder, add your `config.json`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
+In `data` folder, add your `config.toml`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
 
 <details>
     <summary>YOLOv7</summary>
 
-```json
-{
-  "detector": {
-    "architecture": "yolo",
-    "name": "yolov7",
-    "confidence_threshold": 0.25,
-    "nms_threshold": 0.45,
-    "engine": {
-      "model_path": "./data/yolov7n.engine",
-      "batch_size": 1,
-      "precision": 16
-    },
-    "class_names_file": "./data/classes.txt"
-  }
-}
+```toml
+architecture = "yolo"
+name = "yolov7"
+confidence_threshold = 0.25
+nms_threshold = 0.45
+class_names_file = "./data/classes.txt"
+
+[engine]
+model_path = "./data/yolov7n.engine"
+batch_size = 1
+precision = "FP16"
 ```
 </details>
 <details>
     <summary>YOLOv8</summary>
 
-```json
-{
-  "detector": {
-    "architecture": "yolo",
-    "name": "yolov8",
-    "confidence_threshold": 0.25,
-    "nms_threshold": 0.45,
-    "engine": {
-      "model_path": "./data/yolov8n.engine",
-      "batch_size": 1,
-      "precision": 16
-    },
-    "class_names_file": "./data/classes.txt"
-  }
-}
+```toml
+architecture = "yolo"
+name = "yolov8"
+confidence_threshold = 0.25
+nms_threshold = 0.45
+class_names_file = "./data/classes.txt"
+
+[engine]
+model_path = "./data/yolov8n.engine"
+batch_size = 1
+precision = "FP16"
 ```
 </details>
 <details open>
     <summary>YOLOv11</summary>
 
-```json
-{
-  "detector": {
-    "architecture": "yolo",
-    "name": "yolov11",
-    "confidence_threshold": 0.25,
-    "nms_threshold": 0.45,
-    "engine": {
-      "model_path": "./data/yolo11n.engine",
-      "batch_size": 1,
-      "precision": 16
-    },
-    "class_names_file": "./data/coco.txt"
-  }
-}
+```toml
+architecture = "yolo"
+name = "yolov11"
+confidence_threshold = 0.25
+nms_threshold = 0.45
+class_names_file = "./data/coco.txt"
+
+[engine]
+model_path = "./data/yolo11n.engine"
+batch_size = 1
+precision = "FP16"
 ```
 </details>
-
-Config files support `//` and `/* */` comments.
 
 ## Compile
 ```shell
@@ -102,5 +88,5 @@ meson compile -C build
 ```shell
 # in root directory
 cd build/app/detector
-./detect -i 0 -o data/webcam.mp4 -c data/config.json -d
+./detect -i 0 -o data/webcam.mp4 -c data/yolo11.toml -d
 ```

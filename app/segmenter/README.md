@@ -25,50 +25,42 @@ trtexec --onnx=data/yolo11n-seg.onnx --saveEngine=data/yolo11n-seg.engine --fp16
 ```
 
 ## Configure
-In `data` folder, add your `config.json`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
+In `data` folder, add your `config.toml`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
 
 <details>
     <summary>YOLOv8</summary>
 
-```json
-{
-  "segmenter": {
-    "architecture": "yolo",
-    "name": "yolov8",
-    "confidence_threshold": 0.25,
-    "nms_threshold": 0.45,
-    "engine": {
-      "model_path": "./data/yolov8n-seg.engine",
-      "batch_size": 1,
-      "precision": 16
-    },
-    "class_names_file": "./data/coco.txt"
-  }
-}
+```toml
+architecture = "yolo"
+name = "yolov8"
+confidence_threshold = 0.25
+nms_threshold = 0.45
+mask_threshold = 0.5
+class_names_file = "./data/coco.txt"
+
+[engine]
+model_path = "./data/yolov8n-seg.engine"
+batch_size = 1
+precision = "FP16"
 ```
 </details>
 <details open>
     <summary>YOLOv11</summary>
 
-```json
-{
-  "segmenter": {
-    "architecture": "yolo",
-    "name": "yolov11",
-    "confidence_threshold": 0.25,
-    "nms_threshold": 0.45,
-    "engine": {
-      "model_path": "./data/yolo11n-seg.engine",
-      "batch_size": 1,
-      "precision": 16
-    },
-    "class_names_file": "./data/coco.txt"
-  }
-}
+```toml
+architecture = "yolo"
+name = "yolov11"
+confidence_threshold = 0.25
+nms_threshold = 0.45
+mask_threshold = 0.5
+class_names_file = "./data/coco.txt"
+
+[engine]
+model_path = "./data/yolo11n-seg.engine"
+batch_size = 1
+precision = "FP16"
 ```
 </details>
-
-Config files support `//` and `/* */` comments.
 
 ## Compile
 ```shell
@@ -81,5 +73,5 @@ meson compile -C build
 ```shell
 # in root directory
 cd build/app/segmenter
-./segment -i 0 -o data/webcam.mp4 -c data/config.json -d
+./segment -i 0 -o data/webcam.mp4 -c data/yolov8.toml -d
 ```

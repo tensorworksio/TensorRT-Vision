@@ -5,7 +5,7 @@ namespace det
 {
     std::unique_ptr<trt::DetectionProcessor> DetectorFactory::create(const std::string &config_file)
     {
-        auto arch = loadConfig<det::DetectorArch>(config_file, "detector");
+        auto arch = loadConfig<det::DetectorArch>(config_file);
         return rfl::visit([](auto config) -> std::unique_ptr<trt::DetectionProcessor> {
             return det::YoloFactory::create(std::move(config));
         }, arch);

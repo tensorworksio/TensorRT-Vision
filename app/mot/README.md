@@ -12,114 +12,60 @@ Multiple Object Tracking (MOT) using TensorRT for optimized inference. Supports 
 2. [Optional] [ReId](../reid/README.md)
 
 ## Configure
-In `data` folder, add your `config.json`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array. Config files support `//` and `/* */` comments.
+Each component has its own TOML config file in the `data` folder. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
+
+### Tracker
 
 <details open>
-    <summary>SORT + detector</summary>
+    <summary>SORT</summary>
 
-```json
-{
-  "tracker": {
-    "name": "sort",
-    "kalman": {
-      "time_step": 1,
-      "process_noise_scale": 1.0,
-      "measurement_noise_scale": 1.0
-    },
-    "max_time_lost": 15,
-    "match_thresh": 0.3
-  },
-  "detector": {
-    "architecture": "yolo",
-    "name": "yolov11",
-    "confidence_threshold": 0.25,
-    "nms_threshold": 0.45,
-    "engine": {
-      "model_path": "./data/yolo11n.engine",
-      "batch_size": 1,
-      "precision": 16
-    },
-    "class_names_file": "./data/coco.txt"
-  }
-}
+```toml
+tracker = "sort"
+max_time_lost = 15
+match_thresh = 0.3
+
+[kalman]
+time_step = 1
+process_noise_scale = 1.0
+measurement_noise_scale = 1.0
 ```
 </details>
-<details>
-    <summary>SORT + segmenter</summary>
-
-```json
-{
-  "tracker": {
-    "name": "sort",
-    "kalman": {
-      "time_step": 1,
-      "process_noise_scale": 1.0,
-      "measurement_noise_scale": 1.0
-    },
-    "max_time_lost": 15,
-    "match_thresh": 0.3
-  },
-  "segmenter": {
-    "architecture": "yolo",
-    "name": "yolov11",
-    "confidence_threshold": 0.25,
-    "nms_threshold": 0.45,
-    "engine": {
-      "model_path": "./data/yolo11n-seg.engine",
-      "batch_size": 1,
-      "precision": 16
-    },
-    "class_names_file": "./data/coco.txt"
-  }
-}
-```
-</details>
-
 <details>
     <summary>BoTSORT</summary>
 
-```json
-{
-  "tracker": {
-    "name": "botsort",
-    "kalman": {
-      "time_step": 1,
-      "process_noise_scale": 1.0,
-      "measurement_noise_scale": 1.0
-    },
-    "max_time_lost": 15,
-    "track_high_thresh": 0.5,
-    "track_low_thresh": 0.1,
-    "new_track_thresh": 0.6,
-    "first_match_thresh": 0.3,
-    "second_match_thresh": 0.1,
-    "unconfirmed_match_thresh": 0.2,
-    "proximity_thresh": 0.5,
-    "appearance_thresh": 0.9
-  },
-  "reid": {
-    "engine": {
-      "model_path": "./data/osnet_x0_25.engine",
-      "batch_size": 1,
-      "precision": 16
-    },
-    "confidence_threshold": 0.8
-  },
-  "detector": {
-    "architecture": "yolo",
-    "name": "yolov11",
-    "confidence_threshold": 0.25,
-    "nms_threshold": 0.45,
-    "engine": {
-      "model_path": "./data/yolo11n.engine",
-      "batch_size": 1,
-      "precision": 16
-    },
-    "class_names_file": "./data/coco.txt"
-  }
-}
+```toml
+tracker = "botsort"
+max_time_lost = 15
+track_high_thresh = 0.5
+track_low_thresh = 0.1
+new_track_thresh = 0.6
+first_match_thresh = 0.3
+second_match_thresh = 0.1
+unconfirmed_match_thresh = 0.2
+proximity_thresh = 0.5
+appearance_thresh = 0.9
+
+[kalman]
+time_step = 1
+process_noise_scale = 1.0
+measurement_noise_scale = 1.0
 ```
 </details>
+
+### Detector / Segmenter
+
+See [Detector README](../detector/README.md) and [Segmenter README](../segmenter/README.md) for config examples.
+
+### ReID (optional, recommended with BoTSORT)
+
+```toml
+confidence_threshold = 0.8
+
+[engine]
+model_path = "./data/osnet_x0_25.engine"
+batch_size = 1
+precision = "FP16"
+```
 
 ## Compile
 ```shell
@@ -129,8 +75,31 @@ meson compile -C build
 ```
 
 ## Run
+
+<details open>
+    <summary>SORT + detector</summary>
+
 ```shell
 # in root directory
 cd build/app/mot
-./mot -i 0 -o out.mp4 -c data/config.json -d
+./mot -i 0 -o out.mp4 --tracker data/sort.toml --detector data/yolo11.toml -d
 ```
+</details>
+<details>
+    <summary>SORT + segmenter</summary>
+
+```shell
+# in root directory
+cd build/app/mot
+./mot -i 0 -o out.mp4 --tracker data/sort.toml --segmenter data/yolo11-seg.toml -d
+```
+</details>
+<details>
+    <summary>BoTSORT + detector + ReID</summary>
+
+```shell
+# in root directory
+cd build/app/mot
+./mot -i 0 -o out.mp4 --tracker data/botsort.toml --detector data/yolo11.toml --reid data/osnet.toml -d
+```
+</details>

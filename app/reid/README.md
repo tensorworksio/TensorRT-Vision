@@ -21,16 +21,14 @@ trtexec --onnx=data/osnet_x0_25.onnx --saveEngine=data/osnet_x0_25.engine --fp16
 ```
 
 ## Configure
-In `data` folder, add your `config.json`:
-```json
-{
-  "engine": {
-    "model_path": "./data/osnet_x0_25.engine",
-    "batch_size": 1,
-    "precision": 16
-  },
-  "confidence_threshold": 0.5
-}
+In `data` folder, add your `config.toml`:
+```toml
+confidence_threshold = 0.5
+
+[engine]
+model_path = "./data/osnet_x0_25.engine"
+batch_size = 1
+precision = "FP16"
 ```
 
 ## Compile
@@ -46,12 +44,12 @@ meson compile -C build
 ```shell
 # in root directory
 cd build/app/reid
-./reid -q image1.jpg -k image2.jpg -c data/config.json -d
+./reid -q image1.jpg -k image2.jpg -c data/config.toml -d
 ```
 
 ### JQuery pipeline
 ```shell
 # in root directory
 cd build/app/reid
-./reid -q image1.jpg -k image2.jpg -c data/config.json | jq .data.match
+./reid -q image1.jpg -k image2.jpg -c data/config.toml | jq .data.match
 ```

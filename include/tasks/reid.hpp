@@ -12,9 +12,9 @@ namespace reid
         trt::EngineConfig engine{};
         float confidence_threshold = 0.5f;
 
-        static ReIdConfig load(const std::string &filename, const std::string &task = "")
+        static ReIdConfig load(const std::string &filename)
         {
-            return loadConfig<ReIdConfig>(filename, task);
+            return loadConfig<ReIdConfig>(filename);
         }
     };
 

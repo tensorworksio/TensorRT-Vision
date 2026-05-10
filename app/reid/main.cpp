@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     argparse::ArgumentParser program("reid");
     program.add_argument("-q", "--query").required().help("Query image to compare");
     program.add_argument("-k", "--key").required().help("Key image to compare against");
-    program.add_argument("-c", "--config").required().help("Path to model config.json");
+    program.add_argument("-c", "--config").required().help("Path to model config TOML");
     program.add_argument("-o", "--output").help("Output file");
     program.add_argument("-d", "--display").flag().help("Display images");
 
