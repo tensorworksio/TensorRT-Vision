@@ -8,11 +8,11 @@ Multiple Object Tracking (MOT) using TensorRT for optimized inference. Supports 
 - [BoTSORT](https://github.com/NirAharon/BoT-SORT) ![Support](https://img.shields.io/badge/support-yes-brightgreen.svg)
 
 ## Requirements
-1. [Detector](../detector/README.md) or [Segmenter](../segmenter/README.md) 
-2. [Optional] [ReId](../reid/README.md)
+1. [Detector](../detector/README.md) or [Segmenter](../segmenter/README.md)
+2. [Optional] [ReID](../reid/README.md)
 
 ## Configure
-Each component has its own TOML config file in the `data` folder. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
+Each component has its own TOML config file in the `data/` folder. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
 
 ### Tracker
 
@@ -67,20 +67,26 @@ batch_size = 1
 precision = "FP16"
 ```
 
-## Compile
+---
+
+## 🖥️ Local
+
+### Build
 ```shell
-# in root directory
+# from repo root
 meson setup build -Dbuild_apps=mot
 meson compile -C build
 ```
 
-## Run
+### Export model
+See [Detector README](../detector/README.md) for ONNX export and TRT engine conversion steps.
+
+### Run
 
 <details open>
     <summary>SORT + detector</summary>
 
 ```shell
-# in root directory
 cd build/app/mot
 ./mot -i 0 -o out.mp4 --tracker data/sort.toml --detector data/yolo11.toml -d
 ```
@@ -89,7 +95,6 @@ cd build/app/mot
     <summary>SORT + segmenter</summary>
 
 ```shell
-# in root directory
 cd build/app/mot
 ./mot -i 0 -o out.mp4 --tracker data/sort.toml --segmenter data/yolo11-seg.toml -d
 ```
@@ -98,8 +103,58 @@ cd build/app/mot
     <summary>BoTSORT + detector + ReID</summary>
 
 ```shell
-# in root directory
 cd build/app/mot
 ./mot -i 0 -o out.mp4 --tracker data/botsort.toml --detector data/yolo11.toml --reid data/osnet.toml -d
+```
+</details>
+
+---
+
+## 🐳 Docker
+
+### Build
+```bash
+# from repo root — build base image first if not already done
+docker build -t tensorrt-vision:base .
+docker build -t tensorrt-vision:mot -f app/mot/Dockerfile .
+```
+
+### Export model
+```bash
+mkdir -p data
+
+# Export YOLOv11n to ONNX (no GPU required)
+docker run --rm \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/app/mot/data \
+    tensorrt-vision:mot \
+    bash -c "cd data && yolo export model=yolo11n.pt format=onnx opset=12"
+
+# Convert to TRT engine (GPU required)
+docker run --gpus all --rm \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/app/mot/data \
+    tensorrt-vision:mot \
+    trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16
+```
+
+### Run
+
+<details open>
+    <summary>SORT + detector</summary>
+
+```bash
+docker run --gpus all --rm \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/app/mot/data \
+    tensorrt-vision:mot \
+    ./mot -i data/video.mp4 -o data/out.mp4 --tracker data/sort.toml --detector data/yolo11.toml -d
+```
+</details>
+<details>
+    <summary>BoTSORT + detector + ReID</summary>
+
+```bash
+docker run --gpus all --rm \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/app/mot/data \
+    tensorrt-vision:mot \
+    ./mot -i data/video.mp4 -o data/out.mp4 --tracker data/botsort.toml --detector data/yolo11.toml --reid data/osnet.toml -d
 ```
 </details>

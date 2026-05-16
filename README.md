@@ -18,35 +18,57 @@ TensorRT-Vision provides optimized inference for computer vision models using NV
 - Object Re-Identification
 - Multi Object Tracking
 
-## ⚙️ Requirements
+## ⚙️ Prerequisites
+
+### Local
 1. CUDA 12.6
 2. TensorRT 10.7.0
 3. Python 3.12.3
 
 Follow installation instructions [here](https://gist.github.com/denguir/b21aa66ae7fb1089655dd9de8351a202)
 
-## 🛠️ Build & Install
+### Docker
+Install the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) so Docker containers can access the GPU.
+
+## 🛠️ Local Build
+
 ```bash
 # Build all apps (default)
 meson setup build
 meson compile -C build
 
-# Or explicitly specify apps to build
+# Or build specific apps
 meson setup build -Dbuild_apps=detector,mot
 meson compile -C build
 
-# Make sure trtexec is installed for model export
+# Make sure trtexec is available for model conversion
 alias trtexec='/usr/src/tensorrt/bin/trtexec'
 ```
 
-## 🚀 Quick Start
-Each app has its own README with detailed instructions:
+## 🐳 Docker Build
 
-- [Object Detection Guide](app/detector/README.md)
-- [Object Segmentation Guide](app/segmenter/README.md)
-- [Multi Object Tracking Guide](app/mot/README.md)
-- [Object Classification Guide](app/classifier/README.md)
-- [Object Re-Identification Guide](app/reid/README.md)
+The project uses a two-level Docker hierarchy: a shared **base image** with all common dependencies, and one **app image** per application that inherits from it.
+
+**Step 1 — build the base image (once, shared by all apps):**
+```bash
+docker build -t tensorrt-vision:base .
+```
+
+**Step 2 — build the app image:**
+```bash
+docker build -t tensorrt-vision:<app> -f app/<app>/Dockerfile .
+```
+
+Replace `<app>` with: `detector`, `segmenter`, `classifier`, `reid`, or `mot`.
+
+## 🚀 Quick Start
+Each app has its own README with detailed local and Docker instructions:
+
+- [Object Detection](app/detector/README.md)
+- [Object Segmentation](app/segmenter/README.md)
+- [Multi Object Tracking](app/mot/README.md)
+- [Object Classification](app/classifier/README.md)
+- [Object Re-Identification](app/reid/README.md)
 
 ## 🙏 Credits
 

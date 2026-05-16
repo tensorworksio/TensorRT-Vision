@@ -9,24 +9,8 @@ Object detection engine using TensorRT for optimized inference.
 - [YOLOv8](https://github.com/ultralytics/ultralytics/blob/main/docs/en/models/yolov8.md) ![Support](https://img.shields.io/badge/support-yes-brightgreen.svg)
 - [YOLOv11](https://github.com/ultralytics/ultralytics/tree/main) ![Support](https://img.shields.io/badge/support-yes-brightgreen.svg)
 
-1. Export YOLO model to ONNX:
-```shell
-python3 -m venv venv
-./venv/bin/pip3 install ultralytics onnx onnxsim
-```
-
-```shell
-mkdir data
-./venv/bin/yolo export --model=data/yolo11n.pt --format=onnx --opset=12
-```
-
-2. Convert to TensorRT engine:
-```shell
-trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16
-```
-
 ## Configure
-In `data` folder, add your `config.toml`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
+In `data/` folder, add your `config.toml`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
 
 <details>
     <summary>YOLOv7</summary>
@@ -77,16 +61,65 @@ precision = "FP16"
 ```
 </details>
 
-## Compile
+---
+
+## 🖥️ Local
+
+### Build
 ```shell
-# in root directory
+# from repo root
 meson setup build -Dbuild_apps=detector
 meson compile -C build
 ```
 
-## Run
+### Export model
 ```shell
-# in root directory
+python3 -m venv venv
+./venv/bin/pip3 install ultralytics onnx onnxsim
+
+mkdir -p app/detector/data
+./venv/bin/yolo export --model=data/yolo11n.pt --format=onnx --opset=12
+trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16
+```
+
+### Run
+```shell
 cd build/app/detector
-./detect -i 0 -o data/webcam.mp4 -c data/yolo11.toml -d
+./detect -i 0 -o data/webcam.mp4 -c data/config.toml -d
+```
+
+---
+
+## 🐳 Docker
+
+### Build
+```bash
+# from repo root — build base image first if not already done
+docker build -t tensorrt-vision:base .
+docker build -t tensorrt-vision:detector -f app/detector/Dockerfile .
+```
+
+### Export model
+```bash
+mkdir -p data
+
+# Export ONNX (no GPU required)
+docker run --rm \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/app/detector/data \
+    tensorrt-vision:detector \
+    bash -c "cd data && yolo export model=yolo11n.pt format=onnx opset=12"
+
+# Convert to TRT engine (GPU required)
+docker run --gpus all --rm \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/app/detector/data \
+    tensorrt-vision:detector \
+    trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16
+```
+
+### Run
+```bash
+docker run --gpus all --rm \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/app/detector/data \
+    tensorrt-vision:detector \
+    ./detect -i data/video.mp4 -c data/config.toml -d
 ```

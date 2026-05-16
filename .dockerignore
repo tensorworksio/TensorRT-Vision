@@ -1,0 +1,14 @@
+build/
+**/.git/
+**/venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+# Model weights — mount at runtime, do not bake into build context
+*.pt
+*.pth
+*.onnx
+*.engine
+*.trt
+*.bin
