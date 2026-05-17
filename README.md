@@ -18,6 +18,11 @@ TensorRT-Vision provides optimized inference for computer vision models using NV
 - Object Re-Identification
 - Multi Object Tracking
 
+
+## TODO
+- Prerequisities should not be tied to my system (link to CUDA)
+- The slim image cuda does have the necssary trt lib, maybe just use the same image as build and runtime then. Add python deps so that we can install the requirements off all the projects into a venv. We will endup with a tensorrt image that is big but working.
+
 ## ⚙️ Prerequisites
 
 ### Local
@@ -47,19 +52,35 @@ alias trtexec='/usr/src/tensorrt/bin/trtexec'
 
 ## 🐳 Docker Build
 
-The project uses a two-level Docker hierarchy: a shared **base image** with all common dependencies, and one **app image** per application that inherits from it.
+All images are built from the single root `Dockerfile` using `--target`.
 
-**Step 1 — build the base image (once, shared by all apps):**
+### Selecting your CUDA + TRT version
+
+The default base image (`nvcr.io/nvidia/tensorrt:25.01-py3`) ships CUDA 12.6 + TRT 10.7 and runs on any GPU whose host driver reports CUDA ≥ 12.6 (`nvidia-smi` shows this).  To use a different version, pass `--build-arg`:
+
 ```bash
-docker build -t tensorrt-vision:base .
+# Check available TRT tags at https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tensorrt
+# Check available CUDA runtime tags at https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda
+
+docker build \
+  --build-arg TRT_IMAGE=nvcr.io/nvidia/tensorrt:24.09-py3 \
+  --build-arg CUDA_IMAGE=nvcr.io/nvidia/cuda:12.6.2-cudnn-runtime-ubuntu24.04 \
+  --target detector -t tensorrt-vision:detector .
 ```
 
-**Step 2 — build the app image:**
+The CUDA_IMAGE must match the **major.minor** CUDA version of TRT_IMAGE.
+
+### Build an app image
+
 ```bash
-docker build -t tensorrt-vision:<app> -f app/<app>/Dockerfile .
+docker build --target <app> -t tensorrt-vision:<app> .
 ```
 
 Replace `<app>` with: `detector`, `segmenter`, `classifier`, `reid`, or `mot`.
+
+### Export ONNX models
+
+App images do not include Python or `trtexec`. Export your models on the host using each app's local export steps, then mount the `data/` directory when running the container.
 
 ## 🚀 Quick Start
 Each app has its own README with detailed local and Docker instructions:

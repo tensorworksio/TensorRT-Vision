@@ -77,7 +77,7 @@ meson compile -C build
 python3 -m venv venv
 ./venv/bin/pip3 install ultralytics onnx onnxsim
 
-mkdir -p app/detector/data
+mkdir -p data
 ./venv/bin/yolo export --model=data/yolo11n.pt --format=onnx --opset=12
 trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16
 ```
@@ -94,32 +94,33 @@ cd build/app/detector
 
 ### Build
 ```bash
-# from repo root — build base image first if not already done
-docker build -t tensorrt-vision:base .
-docker build -t tensorrt-vision:detector -f app/detector/Dockerfile .
+# from repo root
+docker build --target detector -t tensorrt-vision:detector .
 ```
 
 ### Export model
-```bash
+```shell
+python3 -m venv venv
+./venv/bin/pip3 install ultralytics onnx onnxsim
+
 mkdir -p data
+./venv/bin/yolo export --model=data/yolo11n.pt --format=onnx --opset=12
 
-# Export ONNX (no GPU required)
-docker run --rm \
-    -v $(pwd)/data:/workspace/TensorRT-Vision/app/detector/data \
-    tensorrt-vision:detector \
-    bash -c "cd data && yolo export model=yolo11n.pt format=onnx opset=12"
-
-# Convert to TRT engine (GPU required)
 docker run --gpus all --rm \
-    -v $(pwd)/data:/workspace/TensorRT-Vision/app/detector/data \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/detector/data \
     tensorrt-vision:detector \
     trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16
 ```
 
 ### Run
 ```bash
+xhost +local:docker
+
 docker run --gpus all --rm \
-    -v $(pwd)/data:/workspace/TensorRT-Vision/app/detector/data \
+    --user $(id -u):$(id -g) \
+    --env DISPLAY=$DISPLAY \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/detector/data \
     tensorrt-vision:detector \
-    ./detect -i data/video.mp4 -c data/config.toml -d
+    ./detect -i 0 -c data/yolo11.toml -d
 ```

@@ -114,27 +114,25 @@ cd build/app/mot
 
 ### Build
 ```bash
-# from repo root — build base image first if not already done
-docker build -t tensorrt-vision:base .
-docker build -t tensorrt-vision:mot -f app/mot/Dockerfile .
+# from repo root
+docker build --target mot -t tensorrt-vision:mot .
 ```
 
 ### Export model
-```bash
+```shell
+python3 -m venv venv
+./venv/bin/pip3 install ultralytics onnx onnxsim
+
 mkdir -p data
+./venv/bin/yolo export --model=data/yolo11n.pt --format=onnx --opset=12
 
-# Export YOLOv11n to ONNX (no GPU required)
-docker run --rm \
-    -v $(pwd)/data:/workspace/TensorRT-Vision/app/mot/data \
-    tensorrt-vision:mot \
-    bash -c "cd data && yolo export model=yolo11n.pt format=onnx opset=12"
-
-# Convert to TRT engine (GPU required)
 docker run --gpus all --rm \
-    -v $(pwd)/data:/workspace/TensorRT-Vision/app/mot/data \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/mot/data \
     tensorrt-vision:mot \
     trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16
 ```
+
+For ReID, follow the [ReID export steps](../reid/README.md#-docker).
 
 ### Run
 
@@ -142,8 +140,13 @@ docker run --gpus all --rm \
     <summary>SORT + detector</summary>
 
 ```bash
+xhost +local:docker
+
 docker run --gpus all --rm \
-    -v $(pwd)/data:/workspace/TensorRT-Vision/app/mot/data \
+    --user $(id -u):$(id -g) \
+    --env DISPLAY=$DISPLAY \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/mot/data \
     tensorrt-vision:mot \
     ./mot -i data/video.mp4 -o data/out.mp4 --tracker data/sort.toml --detector data/yolo11.toml -d
 ```
@@ -152,8 +155,13 @@ docker run --gpus all --rm \
     <summary>BoTSORT + detector + ReID</summary>
 
 ```bash
+xhost +local:docker
+
 docker run --gpus all --rm \
-    -v $(pwd)/data:/workspace/TensorRT-Vision/app/mot/data \
+    --user $(id -u):$(id -g) \
+    --env DISPLAY=$DISPLAY \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/mot/data \
     tensorrt-vision:mot \
     ./mot -i data/video.mp4 -o data/out.mp4 --tracker data/botsort.toml --detector data/yolo11.toml --reid data/osnet.toml -d
 ```

@@ -61,28 +61,29 @@ cd build/app/classifier
 
 ### Build
 ```bash
-# from repo root — build base image first if not already done
-docker build -t tensorrt-vision:base .
-docker build -t tensorrt-vision:classifier -f app/classifier/Dockerfile .
+# from repo root
+docker build --target classifier -t tensorrt-vision:classifier .
 ```
 
 ### Export model
-Provide your own ONNX model, then convert to a TRT engine (GPU required):
+Place your `model.onnx` in `data/`, then convert to a TRT engine:
 
 ```bash
-mkdir -p data
-# place your model.onnx in data/
-
 docker run --gpus all --rm \
-    -v $(pwd)/data:/workspace/TensorRT-Vision/app/classifier/data \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/classifier/data \
     tensorrt-vision:classifier \
     trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16
 ```
 
 ### Run
 ```bash
+xhost +local:docker
+
 docker run --gpus all --rm \
-    -v $(pwd)/data:/workspace/TensorRT-Vision/app/classifier/data \
+    --user $(id -u):$(id -g) \
+    --env DISPLAY=$DISPLAY \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/classifier/data \
     tensorrt-vision:classifier \
     ./classify -i data/image.jpg -c data/config.toml -d
 ```
@@ -90,7 +91,8 @@ docker run --gpus all --rm \
 JSON pipeline:
 ```bash
 docker run --gpus all --rm \
-    -v $(pwd)/data:/workspace/TensorRT-Vision/app/classifier/data \
+    --user $(id -u):$(id -g) \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/classifier/data \
     tensorrt-vision:classifier \
     ./classify -i data/image.jpg -c data/config.toml | jq .data.class_name
 ```
