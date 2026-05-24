@@ -66,22 +66,40 @@ docker build --target classifier -t tensorrt-vision:classifier .
 ```
 
 ### Export model
-Place your `model.onnx` in `data/`, then convert to a TRT engine:
+`python3.12` and `trtexec` both ship in the image. Place your `model.onnx` in `data/`, then convert it to a TRT engine inside the container:
 
 ```bash
 docker run --gpus all --rm \
+    --user $(id -u):$(id -g) \
     -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/classifier/data \
     tensorrt-vision:classifier \
     trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16
 ```
 
-### Run
+To run the PyTorch/TensorFlow → ONNX export in-container too, create a venv first and install your framework, e.g.:
+
 ```bash
-xhost +local:docker
+docker run --gpus all --rm \
+    --user $(id -u):$(id -g) \
+    --env HOME=/tmp \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/classifier/data \
+    tensorrt-vision:classifier bash -c "\
+        python3 -m venv /tmp/venv && \
+        /tmp/venv/bin/pip3 install torch onnx && \
+        /tmp/venv/bin/python3 data/export.py && \
+        trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16"
+```
+
+### Run
+The image sets `QT_QPA_PLATFORM=offscreen` so headless runs don't crash; override it with `QT_QPA_PLATFORM=xcb` for a live display window.
+
+```bash
+xhost +local:
 
 docker run --gpus all --rm \
     --user $(id -u):$(id -g) \
     --env DISPLAY=$DISPLAY \
+    --env QT_QPA_PLATFORM=xcb \
     -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
     -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/classifier/data \
     tensorrt-vision:classifier \

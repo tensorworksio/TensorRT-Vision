@@ -3,9 +3,9 @@
 # TensorRT-Vision
 ### A TensorRT Toolbox for Optimized Vision Model Inference
 
-[![python](https://img.shields.io/badge/python-3.12.3-green)](https://www.python.org/downloads/release/python-3123/)
-[![cuda](https://img.shields.io/badge/cuda-12.6-green)](https://developer.nvidia.com/cuda-downloads)
-[![trt](https://img.shields.io/badge/TRT-10.5.0-green)](https://developer.nvidia.com/tensorrt)
+[![python](https://img.shields.io/badge/python-3.12-green)](https://www.python.org/downloads/release/python-3123/)
+[![cuda](https://img.shields.io/badge/CUDA-driver%20dependent-blue)](https://developer.nvidia.com/cuda-downloads)
+[![trt](https://img.shields.io/badge/TensorRT-driver%20dependent-blue)](https://developer.nvidia.com/tensorrt)
 
 </div>
 
@@ -19,23 +19,21 @@ TensorRT-Vision provides optimized inference for computer vision models using NV
 - Multi Object Tracking
 
 
-## TODO
-- Prerequisities should not be tied to my system (link to CUDA)
-- The slim image cuda does have the necssary trt lib, maybe just use the same image as build and runtime then. Add python deps so that we can install the requirements off all the projects into a venv. We will endup with a tensorrt image that is big but working.
-
 ## ⚙️ Prerequisites
 
-### Local
-1. CUDA 12.6
-2. TensorRT 10.7.0
-3. Python 3.12.3
+There is no single fixed CUDA/TensorRT requirement — the right stack depends on your GPU driver. Run `nvidia-smi` and read the **CUDA Version** in the top-right: that is the highest CUDA your driver supports. Pick a CUDA + TensorRT combination at or below it.
+
+### 🖥️ Local
+1. Python 3.12
+2. A CUDA Toolkit supported by your GPU driver
+3. The matching TensorRT release for that CUDA version
 
 Follow installation instructions [here](https://gist.github.com/denguir/b21aa66ae7fb1089655dd9de8351a202)
 
-### Docker
-Install the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) so Docker containers can access the GPU.
+### 🐳 Docker
+Install the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) so containers can access the GPU. The CUDA + TensorRT stack is then fully determined by the NGC base image tag chosen at build time — see [Selecting your CUDA + TRT version](#selecting-your-cuda--trt-version). Nothing else to install on the host.
 
-## 🛠️ Local Build
+## 🖥️ Local Build
 
 ```bash
 # Build all apps (default)
@@ -56,19 +54,14 @@ All images are built from the single root `Dockerfile` using `--target`.
 
 ### Selecting your CUDA + TRT version
 
-The default base image (`nvcr.io/nvidia/tensorrt:25.01-py3`) ships CUDA 12.6 + TRT 10.7 and runs on any GPU whose host driver reports CUDA ≥ 12.6 (`nvidia-smi` shows this).  To use a different version, pass `--build-arg`:
+The default base image (`nvcr.io/nvidia/tensorrt:25.01-py3`) ships CUDA 12.6 + TRT 10.7 and runs on any GPU whose host driver reports CUDA ≥ 12.6 (`nvidia-smi` shows this).  The same image backs both the build and runtime stages, so a single `--build-arg` switches versions:
 
 ```bash
 # Check available TRT tags at https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tensorrt
-# Check available CUDA runtime tags at https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda
-
 docker build \
   --build-arg TRT_IMAGE=nvcr.io/nvidia/tensorrt:24.09-py3 \
-  --build-arg CUDA_IMAGE=nvcr.io/nvidia/cuda:12.6.2-cudnn-runtime-ubuntu24.04 \
   --target detector -t tensorrt-vision:detector .
 ```
-
-The CUDA_IMAGE must match the **major.minor** CUDA version of TRT_IMAGE.
 
 ### Build an app image
 
@@ -80,7 +73,7 @@ Replace `<app>` with: `detector`, `segmenter`, `classifier`, `reid`, or `mot`.
 
 ### Export ONNX models
 
-App images do not include Python or `trtexec`. Export your models on the host using each app's local export steps, then mount the `data/` directory when running the container.
+App images include `python3.12` and `trtexec`, so models can be exported to ONNX and converted to TRT engines entirely inside the container — no host Python needed. Mount the `data/` directory so the generated engine persists on the host. See each app's README for the exact command.
 
 ## 🚀 Quick Start
 Each app has its own README with detailed local and Docker instructions:
