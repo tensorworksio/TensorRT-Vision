@@ -72,13 +72,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # The NGC image ships python3.12 but not the venv module (ensurepip); add it so
-# users can `python3 -m venv` for in-container model export.
+# we can build the model-export virtualenv below.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.12-venv \
     && rm -rf /var/lib/apt/lists/*
 
-# trtexec lives here in the NGC image; expose it on PATH for engine builds.
-ENV PATH="/usr/src/tensorrt/bin:${PATH}"
+# Bake a model-export virtualenv into the image so users don't reinstall the
+# heavy PyTorch/ultralytics stack on every export. Torch is CPU-only: ONNX
+# export runs on CPU and the image already ships CUDA/TRT for the trtexec step.
+ENV EXPORT_VENV=/opt/export-venv
+RUN python3 -m venv ${EXPORT_VENV} \
+    && ${EXPORT_VENV}/bin/pip install --no-cache-dir --upgrade pip \
+    && ${EXPORT_VENV}/bin/pip install --no-cache-dir torch torchvision \
+        --index-url https://download.pytorch.org/whl/cpu \
+    && ${EXPORT_VENV}/bin/pip install --no-cache-dir ultralytics onnx onnxsim onnxruntime
+
+# Put the export venv (yolo, python3) and trtexec on PATH for engine builds.
+ENV PATH="${EXPORT_VENV}/bin:/usr/src/tensorrt/bin:${PATH}"
 ENV QT_QPA_PLATFORM=offscreen
 WORKDIR /workspace/TensorRT-Vision
 
@@ -130,6 +140,16 @@ COPY --from=build-reid \
 COPY --from=build-reid \
     /workspace/TensorRT-Vision/app/reid/data \
     /workspace/TensorRT-Vision/build/app/reid/data
+# reid export uses torchreid (not in the shared export venv) and its own CLI;
+# layer the extra deps onto the baked venv and bake the script to /opt.
+COPY --from=build-reid \
+    /workspace/TensorRT-Vision/app/reid/torchreid-cli.py \
+    /opt/torchreid-cli.py
+COPY --from=build-reid \
+    /workspace/TensorRT-Vision/app/reid/requirements.txt \
+    /tmp/reid-requirements.txt
+RUN ${EXPORT_VENV}/bin/pip install --no-cache-dir -r /tmp/reid-requirements.txt \
+    && rm /tmp/reid-requirements.txt
 RUN ldconfig
 WORKDIR /workspace/TensorRT-Vision/build/app/reid
 

@@ -73,7 +73,7 @@ Replace `<app>` with: `detector`, `segmenter`, `classifier`, `reid`, or `mot`.
 
 ### Export ONNX models
 
-App images include `python3.12` and `trtexec`, so models can be exported to ONNX and converted to TRT engines entirely inside the container — no host Python needed. Mount the `data/` directory so the generated engine persists on the host. See each app's README for the exact command.
+App images bake in a model-export virtualenv (`ultralytics`/`torch`, `onnx`) alongside `trtexec`, so models can be exported to ONNX and converted to TRT engines entirely inside the container — no host Python and no per-export installs. Mount the `data/` directory so the generated engine persists on the host. See each app's README for the exact command.
 
 ## 🚀 Quick Start
 Each app has its own README with detailed local and Docker instructions:

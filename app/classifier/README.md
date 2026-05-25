@@ -66,7 +66,7 @@ docker build --target classifier -t tensorrt-vision:classifier .
 ```
 
 ### Export model
-`python3.12` and `trtexec` both ship in the image. Place your `model.onnx` in `data/`, then convert it to a TRT engine inside the container:
+`trtexec` ships in the image. Place your `model.onnx` in `data/`, then convert it to a TRT engine inside the container:
 
 ```bash
 docker run --gpus all --rm \
@@ -76,7 +76,7 @@ docker run --gpus all --rm \
     trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16
 ```
 
-To run the PyTorch/TensorFlow → ONNX export in-container too, create a venv first and install your framework, e.g.:
+The image also bakes in an export virtualenv with `torch` and `onnx`, so you can run the PyTorch → ONNX step in-container too, e.g.:
 
 ```bash
 docker run --gpus all --rm \
@@ -84,9 +84,7 @@ docker run --gpus all --rm \
     --env HOME=/tmp \
     -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/classifier/data \
     tensorrt-vision:classifier bash -c "\
-        python3 -m venv /tmp/venv && \
-        /tmp/venv/bin/pip3 install torch onnx && \
-        /tmp/venv/bin/python3 data/export.py && \
+        python3 data/export.py && \
         trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16"
 ```
 

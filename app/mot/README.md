@@ -119,7 +119,7 @@ docker build --target mot -t tensorrt-vision:mot .
 ```
 
 ### Export model
-`python3.12` and `trtexec` both ship in the image, so the full export — PyTorch → ONNX → TRT engine — runs inside the container. The mounted `data/` volume keeps the generated files on the host.
+The image bakes in an export virtualenv (`ultralytics`, `onnx`, `trtexec`), so the full export — PyTorch → ONNX → TRT engine — runs inside the container with no installs. The mounted `data/` volume keeps the generated files on the host.
 
 ```bash
 docker run --gpus all --rm \
@@ -127,9 +127,7 @@ docker run --gpus all --rm \
     --env HOME=/tmp \
     -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/mot/data \
     tensorrt-vision:mot bash -c "\
-        python3 -m venv /tmp/venv && \
-        /tmp/venv/bin/pip3 install ultralytics onnx onnxsim && \
-        /tmp/venv/bin/yolo export --model=data/yolo11n.pt --format=onnx --opset=12 && \
+        yolo export --model=data/yolo11n.pt --format=onnx --opset=12 && \
         trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16"
 ```
 

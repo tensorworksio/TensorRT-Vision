@@ -61,18 +61,15 @@ docker build --target reid -t tensorrt-vision:reid .
 ```
 
 ### Export model
-`python3.12` and `trtexec` both ship in the image. The export script (`torchreid-cli.py`) is not baked into the image, so mount the repo's `app/reid` directory alongside the `data/` volume, then run the whole export inside the container:
+The image bakes in an export virtualenv (`torchreid`, `onnx`, `trtexec`) and the export script at `/opt/torchreid-cli.py`, so the full export runs inside the container with no installs. The mounted `data/` volume keeps the generated files on the host.
 
 ```bash
 docker run --gpus all --rm \
     --user $(id -u):$(id -g) \
     --env HOME=/tmp \
     -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/reid/data \
-    -v $(pwd)/app/reid:/workspace/TensorRT-Vision/app/reid \
     tensorrt-vision:reid bash -c "\
-        python3 -m venv /tmp/venv && \
-        /tmp/venv/bin/pip3 install -r /workspace/TensorRT-Vision/app/reid/requirements.txt && \
-        /tmp/venv/bin/python3 /workspace/TensorRT-Vision/app/reid/torchreid-cli.py -m osnet_x0_25 -e -o data/osnet_x0_25.onnx -s 256 128 && \
+        python3 /opt/torchreid-cli.py -m osnet_x0_25 -e -o data/osnet_x0_25.onnx -s 256 128 && \
         trtexec --onnx=data/osnet_x0_25.onnx --saveEngine=data/osnet_x0_25.engine --fp16"
 ```
 
