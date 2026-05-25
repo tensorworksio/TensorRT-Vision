@@ -3,22 +3,8 @@
 ## Overview
 Image classification using TensorRT for optimized inference.
 
-## Export Model
-1. Export your PyTorch/TensorFlow model to ONNX:
-```python
-import torch
-model = torch.load("model.pt")
-torch.onnx.export(model, ...)
-```
-
-2. Convert ONNX to TensorRT engine:
-```shell
-mkdir data
-trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16
-```
-
 ## Configure
-In `data` folder, add your `config.toml`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
+In `data/` folder, add your `config.toml`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
 
 ```toml
 confidence_threshold = 0.5
@@ -30,25 +16,99 @@ batch_size = 1
 precision = "FP16"
 ```
 
-## Compile
+---
+
+## 🖥️ Local
+
+### Build
 ```shell
-# in root directory
+# from repo root
 meson setup build -Dbuild_apps=classifier
 meson compile -C build
 ```
 
-## Run
+### Export model
+Export your PyTorch/TensorFlow model to ONNX, then convert to a TensorRT engine:
 
-### Display
+```python
+import torch
+model = torch.load("model.pt")
+torch.onnx.export(model, ...)
+```
+
 ```shell
-# in root directory
+mkdir -p app/classifier/data
+trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16
+```
+
+### Run
+
+Display:
+```shell
 cd build/app/classifier
 ./classify -i image.jpg -c data/config.toml -d
 ```
 
-### JQuery Pipeline
+JSON pipeline:
 ```shell
-# in root directory
 cd build/app/classifier
 ./classify -i image.jpg -c data/config.toml | jq .data.class_name
+```
+
+---
+
+## 🐳 Docker
+
+### Build
+```bash
+# from repo root
+docker build --target classifier -t tensorrt-vision:classifier .
+```
+
+### Export model
+`trtexec` ships in the image. Place your `model.onnx` in `data/`, then convert it to a TRT engine inside the container:
+
+```bash
+docker run --gpus all --rm \
+    --user $(id -u):$(id -g) \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/classifier/data \
+    tensorrt-vision:classifier \
+    trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16
+```
+
+The image also bakes in an export virtualenv with `torch` and `onnx`, so you can run the PyTorch → ONNX step in-container too, e.g.:
+
+```bash
+docker run --gpus all --rm \
+    --user $(id -u):$(id -g) \
+    --env HOME=/tmp \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/classifier/data \
+    tensorrt-vision:classifier bash -c "\
+        python3 data/export.py && \
+        trtexec --onnx=data/model.onnx --saveEngine=data/model.engine --fp16"
+```
+
+### Run
+The image sets `QT_QPA_PLATFORM=offscreen` so headless runs don't crash; override it with `QT_QPA_PLATFORM=xcb` for a live display window.
+
+```bash
+xhost +local:
+
+docker run --gpus all --rm \
+    --user $(id -u):$(id -g) \
+    --env DISPLAY=$DISPLAY \
+    --env QT_QPA_PLATFORM=xcb \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/classifier/data \
+    tensorrt-vision:classifier \
+    ./classify -i data/image.jpg -c data/config.toml -d
+```
+
+JSON pipeline:
+```bash
+docker run --gpus all --rm \
+    --user $(id -u):$(id -g) \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/classifier/data \
+    tensorrt-vision:classifier \
+    ./classify -i data/image.jpg -c data/config.toml | jq .data.class_name
 ```

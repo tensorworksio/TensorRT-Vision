@@ -4,6 +4,7 @@ torchvision
 tensorboard
 
 onnx
+onnxscript
 
 Cython
 scipy

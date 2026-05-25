@@ -9,24 +9,8 @@ Object detection engine using TensorRT for optimized inference.
 - [YOLOv8](https://github.com/ultralytics/ultralytics/blob/main/docs/en/models/yolov8.md) ![Support](https://img.shields.io/badge/support-yes-brightgreen.svg)
 - [YOLOv11](https://github.com/ultralytics/ultralytics/tree/main) ![Support](https://img.shields.io/badge/support-yes-brightgreen.svg)
 
-1. Export YOLO model to ONNX:
-```shell
-python3 -m venv venv
-./venv/bin/pip3 install ultralytics onnx onnxsim
-```
-
-```shell
-mkdir data
-./venv/bin/yolo export --model=data/yolo11n.pt --format=onnx --opset=12
-```
-
-2. Convert to TensorRT engine:
-```shell
-trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16
-```
-
 ## Configure
-In `data` folder, add your `config.toml`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
+In `data/` folder, add your `config.toml`. Class names can be specified as a path to a plain text file (one name per line) or as an inline array.
 
 <details>
     <summary>YOLOv7</summary>
@@ -77,16 +61,70 @@ precision = "FP16"
 ```
 </details>
 
-## Compile
+---
+
+## 🖥️ Local
+
+### Build
 ```shell
-# in root directory
+# from repo root
 meson setup build -Dbuild_apps=detector
 meson compile -C build
 ```
 
-## Run
+### Export model
 ```shell
-# in root directory
+python3 -m venv venv
+./venv/bin/pip3 install ultralytics onnx onnxsim
+
+mkdir -p data
+./venv/bin/yolo export --model=data/yolo11n.pt --format=onnx --opset=12
+trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16
+```
+
+### Run
+```shell
 cd build/app/detector
-./detect -i 0 -o data/webcam.mp4 -c data/yolo11.toml -d
+./detect -i 0 -o data/webcam.mp4 -c data/config.toml -d
+```
+
+---
+
+## 🐳 Docker
+
+### Build
+```bash
+# from repo root
+docker build --target detector -t tensorrt-vision:detector .
+```
+
+### Export model
+The image bakes in an export virtualenv (`ultralytics`, `onnx`, `trtexec`), so the full export — PyTorch → ONNX → TRT engine — runs inside the container with no installs. The mounted `data/` volume keeps the generated files on the host.
+
+```bash
+docker run --gpus all --rm \
+    --user $(id -u):$(id -g) \
+    --env HOME=/tmp \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/detector/data \
+    tensorrt-vision:detector bash -c "\
+        yolo export --model=data/yolo11n.pt --format=onnx --opset=12 && \
+        trtexec --onnx=data/yolo11n.onnx --saveEngine=data/yolo11n.engine --fp16"
+```
+
+### Run
+The image sets `QT_QPA_PLATFORM=offscreen` so headless runs don't crash; override it with `QT_QPA_PLATFORM=xcb` for a live display window. The webcam (`-i 0`) is passed in with `--device`; `--group-add` gives the unprivileged container user the host's `video` group so it can open the device node.
+
+```bash
+xhost +local:
+
+docker run --gpus all --rm \
+    --user $(id -u):$(id -g) \
+    --device /dev/video0 \
+    --group-add $(getent group video | cut -d: -f3) \
+    --env DISPLAY=$DISPLAY \
+    --env QT_QPA_PLATFORM=xcb \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+    -v $(pwd)/data:/workspace/TensorRT-Vision/build/app/detector/data \
+    tensorrt-vision:detector \
+    ./detect -i 0 -c data/yolo11.toml -d
 ```
